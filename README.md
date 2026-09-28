@@ -82,7 +82,9 @@ For Codex troubleshooting, run `codex login status` in a terminal. If login expi
 
 ## Study
 
-In the Study tab, check any nonempty combination of Easy, Medium, and Hard. The app shows how many matching entries have a definition, English gloss, and Italian example. Unknown and incomplete entries are excluded. Choose 10, 20, or all matching entries, then start. Each chosen card appears once in the first round.
+In the Study tab, check any nonempty combination of Easy, Medium, and Hard, then choose a topic from the dropdown. **All topics** includes the whole library; a specific topic limits both the displayed count and the session to matching cards. Topics are inferred locally from each card's English gloss and Italian definition. A card can appear in more than one topic, and cards without a specific match appear under **General vocabulary**. The topic is also shown in Library entry details. Changing a card's meaning can change its topic automatically. This uses no Codex evaluation or network request.
+
+The app shows how many matching entries have a definition, English gloss, and Italian example. Unknown and incomplete entries are excluded. Choose 10, 20, or all matching entries, then start. Each chosen card appears once in the first round.
 
 If you chose the default deck at profile creation, all 7,695 cards are ready to study. If you imported the text-only starter collection into an empty profile, those 7,695 entries are Unknown until evaluated. The Study tab shows the Unknown count and has an **Evaluate pending words** button. It uses your Codex account to add difficulty and learning content; when many entries are pending, you can choose a small run such as 20. You can also prepare individual cards in Library by assigning a difficulty and filling in the definition, English gloss, and Italian example. The Study count updates as cards become ready.
 

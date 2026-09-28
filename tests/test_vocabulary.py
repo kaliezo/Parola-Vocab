@@ -18,6 +18,7 @@ from profiles import ProfileStore
 from storage import VocabularyDB
 from starter import load_starter_catalog, starter_counts
 from study import StudySession, choose_cards, recall_estimate, recall_label, selection_weight
+from topics import ALL_TOPICS, TOPICS, topics_for_text
 
 
 def result_for(entry, *, status="ok", difficulty="easy"):
@@ -95,6 +96,36 @@ class ProfileTests(unittest.TestCase):
             self.assertEqual(len(store.list_profiles()), 1)
 
 
+class TopicTests(unittest.TestCase):
+    def test_ambiguous_meanings_and_expressions(self):
+        cases = (
+            ("arancia", "orange", "Food and drink", "Colors and shapes"),
+            ("arancione", "orange", "Colors and shapes", "Food and drink"),
+            ("mouse", "computer mouse", "Technology and media", "Animals"),
+            ("treno", "train", "Travel and transport", "Sports and leisure"),
+        )
+        for word, gloss, expected, excluded in cases:
+            with self.subTest(word=word):
+                assigned = topics_for_text(word, gloss, "")
+                self.assertIn(expected, assigned)
+                self.assertNotIn(excluded, assigned)
+        self.assertEqual(topics_for_text("a casa", "at home", "", "phrase"),
+                         ("Expressions",))
+
+    def test_every_bundled_card_has_a_known_topic(self):
+        path = Path(__file__).resolve().parents[1] / "default_cards.jsonl"
+        cards = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+        self.assertEqual(len(cards), 7695)
+        found = set()
+        for card in cards:
+            assigned = topics_for_text(card["word"], card.get("gloss_en"),
+                                       card.get("definition_it"), card.get("kind", "word"))
+            self.assertTrue(assigned, card["word"])
+            self.assertTrue(set(assigned) <= set(TOPICS), card["word"])
+            found.update(assigned)
+        self.assertEqual(found, set(TOPICS))
+
+
 class StorageTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -165,6 +196,27 @@ class StorageTests(unittest.TestCase):
         pool, incomplete = self.db.study_pool(["easy"])
         self.assertEqual([entry["id"] for entry in pool], [ready_id])
         self.assertEqual(incomplete, 1)
+
+    def test_study_pool_filters_topic_and_difficulty(self):
+        for word, gloss, difficulty in (("rosso", "red", "easy"),
+                                        ("banana", "banana", "medium"),
+                                        ("arancione", "orange", "hard")):
+            entry_id, _ = self.db.add(word)
+            self.db.update(entry_id, original_text=word, context="", notes="",
+                           difficulty=difficulty, definition_it="Una definizione.",
+                           gloss_en=gloss, example_it="Un esempio.", difficulty_reason="")
+        colors, incomplete = self.db.study_pool(("easy", "medium", "hard"),
+                                                 topic="Colors and shapes")
+        self.assertEqual([row["original_text"] for row in colors], ["arancione", "rosso"])
+        self.assertEqual(incomplete, 0)
+        food, _ = self.db.study_pool(("easy", "medium", "hard"), topic="Food and drink")
+        self.assertEqual([row["original_text"] for row in food], ["banana"])
+        self.assertEqual(len(self.db.study_pool(("easy", "medium", "hard"), ALL_TOPICS)[0]), 3)
+        self.assertEqual([row["original_text"] for row in
+                          self.db.study_pool(("easy",), "Colors and shapes")[0]], ["rosso"])
+        with self.assertRaises(ValueError):
+            self.db.study_pool(("easy",), topic="Not a topic")
+
 
     def test_reviewed_entry_is_skipped_until_context_changes(self):
         reviewed_id, _ = self.db.add("piano")

@@ -9,6 +9,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
+from topics import ALL_TOPICS, TOPICS, topics_for_card
+
 DIFFICULTIES = ("unknown", "easy", "medium", "hard")
 MAX_WORD_LENGTH = 120
 ENTRY_COLUMNS = (
@@ -372,11 +374,15 @@ class VocabularyDB:
                 self.conn.execute("DELETE FROM reclassification_pending WHERE entry_id=?", (result["id"],))
         return {"applied": applied, "needs_review": needs_review, "skipped_stale": skipped}
 
-    def study_pool(self, difficulties):
+    def study_pool(self, difficulties, topic=ALL_TOPICS):
+        if topic not in (ALL_TOPICS, *TOPICS):
+            raise ValueError("Unknown study topic.")
         chosen = tuple(x for x in difficulties if x in DIFFICULTIES[1:])
         if not chosen:
             return [], 0
         rows = self.list_entries(difficulties=chosen)
+        if topic != ALL_TOPICS:
+            rows = [row for row in rows if topic in topics_for_card(row)]
         ready = [row for row in rows if all((row[field] or "").strip()
                  for field in ("definition_it", "gloss_en", "example_it"))]
         return ready, len(rows) - len(ready)

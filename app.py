@@ -16,6 +16,7 @@ from profiles import ProfileStore
 from storage import DIFFICULTIES, VocabularyDB
 from starter import LEVELS, load_starter_catalog, starter_counts
 from study import StudySession, recall_estimate, recall_label
+from topics import ALL_TOPICS, TOPICS, topics_for_card
 
 
 BG = "#0d1117"
@@ -476,6 +477,14 @@ class VocabularyApp(tk.Tk):
                      width=7, state="readonly").pack(side="left")
         ttk.Button(option_row, text="Start session", style="Accent.TButton",
                    command=self._start_study).pack(side="right")
+        topic_row = ttk.Frame(options, style="Panel.TFrame")
+        topic_row.pack(fill="x", pady=(10, 0))
+        ttk.Label(topic_row, text="TOPIC", style="Field.TLabel").pack(side="left", padx=(0, 8))
+        self.study_topic = tk.StringVar(value=ALL_TOPICS)
+        topic_menu = ttk.Combobox(topic_row, textvariable=self.study_topic,
+                                  values=(ALL_TOPICS, *TOPICS), state="readonly", width=28)
+        topic_menu.pack(side="left")
+        topic_menu.bind("<<ComboboxSelected>>", lambda _event: self._refresh_study_count())
         self.study_count = tk.StringVar()
         ttk.Label(options, textvariable=self.study_count, style="PanelMuted.TLabel",
                   wraplength=1000).pack(
@@ -718,7 +727,8 @@ class VocabularyApp(tk.Tk):
         success = (f"Study success: {row['remembered_count']}/{attempts} "
                    f"({row['remembered_count'] / attempts:.0%})" if attempts else "No study attempts yet")
         estimate = f"Estimated recall: {recall_estimate(row, recent):.0%} ({recall_label(row, recent)})"
-        self.meta_label.set(f"Added {row['created_at']}  |  Revision {row['revision']}  |  "
+        self.meta_label.set(f"Topics: {', '.join(topics_for_card(row))}  |  "
+                            f"Added {row['created_at']}  |  Revision {row['revision']}  |  "
                             f"{success}  |  {estimate}" +
                             (f"  |  Starter {row['starter_level']} {row['starter_kind']} "
                              "(estimated source level)" if row["starter_level"] else "") +
@@ -1157,13 +1167,18 @@ class VocabularyApp(tk.Tk):
         if not hasattr(self, "study_count"):
             return
         chosen = self._chosen_study_difficulties()
-        ready, incomplete = self.db.study_pool(chosen)
+        ready, incomplete = self.db.study_pool(chosen, topic=self.study_topic.get())
         unknown = self.db.counts()["unknown"]
         reviewed = self.db.review_count()
         if not chosen:
             self.study_count.set("Select at least one difficulty to study.")
         elif not ready:
-            if unknown:
+            if self.study_topic.get() != ALL_TOPICS:
+                message = f"No study-ready cards match {self.study_topic.get()} at these difficulties."
+                if incomplete:
+                    message += f" {incomplete:,} matching entries need learning content."
+                self.study_count.set(message)
+            elif unknown:
                 message = (f"No cards ready for these difficulties. {unknown:,} Unknown entries "
                            "are excluded.")
                 if incomplete:
@@ -1179,7 +1194,7 @@ class VocabularyApp(tk.Tk):
                     "English gloss, or Italian example. Complete them in Library."
                 )
             else:
-                self.study_count.set("No cards match these difficulties. Try another selection.")
+                self.study_count.set("No cards match this topic and difficulty selection. Try another selection.")
         else:
             noun = "entry" if len(ready) == 1 else "entries"
             verb = "matches" if len(ready) == 1 else "match"
@@ -1195,18 +1210,20 @@ class VocabularyApp(tk.Tk):
         if not chosen:
             self._message("Select at least one study difficulty.")
             return
-        ready, incomplete = self.db.study_pool(chosen)
+        ready, incomplete = self.db.study_pool(chosen, topic=self.study_topic.get())
         if not ready:
             unknown = self.db.counts()["unknown"]
             reviewed = self.db.review_count()
-            if unknown > reviewed:
+            if self.study_topic.get() != ALL_TOPICS:
+                self._message("No study-ready cards match this topic and difficulty selection.")
+            elif unknown > reviewed:
                 self._message("No cards ready. Evaluate new words or complete entries in Library.")
             elif reviewed:
                 self._message("No cards ready. Review flagged entries and add context in Library.")
             elif incomplete:
                 self._message("No cards ready. Complete learning content in Library.")
             else:
-                self._message("No cards match these difficulties. Try another selection.")
+                self._message("No cards match this topic and difficulty selection. Try another selection.")
             return
         size = "all" if self.session_size.get() == "All" else self.session_size.get()
         recent = self.db.recent_first_round_outcomes([row["id"] for row in ready])
