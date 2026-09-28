@@ -1,0 +1,10 @@
+{
+  "format_version": 1,
+  "card_count": 7695,
+  "settings": {
+    "level": "A2",
+    "model": "gpt-6-sol",
+    "effort": "xhigh",
+    "timeout": "900"
+  }
+}

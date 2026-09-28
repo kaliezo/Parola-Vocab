@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Italian vocabulary classification result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "request_id", "results"],
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "request_id": {"type": "string", "minLength": 36, "maxLength": 36},
+    "results": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "revision", "original_text", "status", "difficulty", "definition_it", "gloss_en", "example_it", "difficulty_reason", "review_note"],
+        "properties": {
+          "id": {"type": "integer", "minimum": 1},
+          "revision": {"type": "integer", "minimum": 1},
+          "original_text": {"type": "string", "minLength": 1, "maxLength": 120},
+          "status": {"type": "string", "enum": ["ok", "needs_review"]},
+          "difficulty": {"type": ["string", "null"], "enum": ["easy", "medium", "hard", null]},
+          "definition_it": {"type": ["string", "null"], "maxLength": 500},
+          "gloss_en": {"type": ["string", "null"], "maxLength": 300},
+          "example_it": {"type": ["string", "null"], "maxLength": 500},
+          "difficulty_reason": {"type": ["string", "null"], "maxLength": 500},
+          "review_note": {"type": ["string", "null"], "maxLength": 500}
+        }
+      }
+    }
+  }
+}
