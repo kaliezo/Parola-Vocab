@@ -185,6 +185,7 @@ class StorageTests(unittest.TestCase):
         self.assertEqual(len({card["id"] for card in session.cards}), 3)
         while session.current:
             session.reveal()
+            session.reveal()
             entry_id = session.answer(False)
             self.db.record_study(entry_id, False)
         self.assertEqual(self.db.counts(), {"unknown": 1, "easy": 1, "medium": 1, "hard": 1})
@@ -665,7 +666,9 @@ class AdaptiveStudyTests(unittest.TestCase):
                                "all", rng=random.Random(4))
         session_id = session.session_id
         session.reveal()
+        session.reveal()
         again_id = session.answer(False)
+        session.reveal()
         session.reveal()
         session.answer(True)
         self.assertTrue(session.next_round())
@@ -957,6 +960,35 @@ class ParallelEvaluationTests(unittest.TestCase):
 
 
 class StudyWorkflowTests(unittest.TestCase):
+    def test_reveal_shows_example_before_answer(self):
+        card = {**study_entry(1, 0, 0), "original_text": "discutere",
+                "example_it": "Discutiamo dopo cena.", "gloss_en": "to discuss",
+                "definition_it": "Parlare con altri di un argomento."}
+        session = StudySession([card], "all")
+        shown = []
+        button_changes = {"reveal": [], "remembered": [], "again": []}
+        fake = SimpleNamespace(
+            session=session, card_answer=SimpleNamespace(set=shown.append),
+            reveal_button=SimpleNamespace(configure=lambda **kw: button_changes["reveal"].append(kw)),
+            remembered_button=SimpleNamespace(configure=lambda **kw: button_changes["remembered"].append(kw)),
+            again_button=SimpleNamespace(configure=lambda **kw: button_changes["again"].append(kw)),
+        )
+        VocabularyApp._reveal(fake)
+        self.assertIn(card["example_it"], shown[-1])
+        self.assertNotIn(card["gloss_en"], shown[-1])
+        self.assertNotIn(card["definition_it"], shown[-1])
+        self.assertFalse(session.revealed)
+        with self.assertRaisesRegex(ValueError, "Reveal"):
+            session.answer(True)
+        VocabularyApp._reveal(fake)
+        self.assertIn(card["gloss_en"], shown[-1])
+        self.assertIn(card["definition_it"], shown[-1])
+        self.assertTrue(session.revealed)
+        self.assertEqual(button_changes["remembered"][-1], {"state": "normal"})
+        self.assertEqual(button_changes["again"][-1], {"state": "normal"})
+        session.answer(True)
+        self.assertFalse(session.revealed)
+
     def test_app_answer_records_session_round_without_opening_gui(self):
         with tempfile.TemporaryDirectory() as directory:
             db = VocabularyDB(Path(directory) / "study.sqlite3")
@@ -966,10 +998,12 @@ class StudyWorkflowTests(unittest.TestCase):
                 fake = SimpleNamespace(db=db, session=session, _show_card=lambda: None,
                                        _refresh_library=lambda: None)
                 session.reveal()
+                session.reveal()
                 VocabularyApp._answer(fake, False)
                 self.assertEqual(db.recent_first_round_outcomes([entry_id]), {entry_id: [0]})
                 self.assertEqual(db.get(entry_id)["again_count"], 1)
                 self.assertTrue(session.next_round())
+                session.reveal()
                 session.reveal()
                 VocabularyApp._answer(fake, True)
                 self.assertEqual(db.recent_first_round_outcomes([entry_id]), {entry_id: [0]})

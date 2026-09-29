@@ -76,7 +76,7 @@ class StudySession:
         self.cards = choose_cards(entries, size, rng=rng, recent_outcomes=recent_outcomes)
         self.round_total = len(self.cards)
         self.index = 0
-        self.revealed = False
+        self.reveal_stage = 0
         self.again_cards = []
         self.remembered = 0
         self.again = 0
@@ -86,15 +86,19 @@ class StudySession:
     def current(self):
         return self.cards[self.index] if self.index < len(self.cards) else None
 
+    @property
+    def revealed(self):
+        return self.reveal_stage == 2
+
     def reveal(self):
-        if self.current is None:
-            return False
-        self.revealed = True
-        return True
+        if self.current is None or self.revealed:
+            return 0
+        self.reveal_stage += 1
+        return self.reveal_stage
 
     def answer(self, remembered):
         if self.current is None or not self.revealed:
-            raise ValueError("Reveal this card before answering.")
+            raise ValueError("Reveal the full answer before rating this card.")
         entry = self.current
         if remembered:
             self.remembered += 1
@@ -102,7 +106,7 @@ class StudySession:
             self.again += 1
             self.again_cards.append(entry)
         self.index += 1
-        self.revealed = False
+        self.reveal_stage = 0
         return entry["id"]
 
     def next_round(self):
@@ -112,6 +116,6 @@ class StudySession:
         self.again_cards = []
         self.round_total = len(self.cards)
         self.index = 0
-        self.revealed = False
+        self.reveal_stage = 0
         self.round_number += 1
         return True

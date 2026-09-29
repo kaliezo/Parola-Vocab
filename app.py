@@ -522,12 +522,12 @@ class VocabularyApp(tk.Tk):
                   wraplength=760, justify="center").pack(anchor="center", pady=(27, 25))
         answer_box = ttk.Frame(card_frame, style="Raised.TFrame", padding=(18, 17))
         answer_box.pack(fill="x", pady=(0, 18))
-        self.card_answer = tk.StringVar(value="The answer stays hidden until you reveal it.")
+        self.card_answer = tk.StringVar(value="Reveal to see the Italian example sentence.")
         ttk.Label(answer_box, textvariable=self.card_answer, style="Answer.TLabel",
                   wraplength=760, justify="left").pack(anchor="w", fill="x")
         buttons = ttk.Frame(card_frame, style="Panel.TFrame")
         buttons.pack(anchor="center")
-        self.reveal_button = ttk.Button(buttons, text="Reveal  (Space)", style="Accent.TButton",
+        self.reveal_button = ttk.Button(buttons, text="Reveal example  (Space)", style="Accent.TButton",
                                         command=self._reveal, state="disabled")
         self.reveal_button.pack(side="left", padx=5)
         self.remembered_button = ttk.Button(buttons, text="Remembered  (R)", style="Success.TButton",
@@ -1276,20 +1276,28 @@ class VocabularyApp(tk.Tk):
         self.study_progress.set(f"Round {self.session.round_number}  |  Card {self.session.index + 1} "
                                 f"of {self.session.round_total}")
         self.card_word.set(card["original_text"])
-        self.card_answer.set("Reveal to see the definition, English gloss, and example.")
-        self.reveal_button.configure(state="normal")
+        self.card_answer.set("Reveal to see the Italian example sentence.")
+        self.reveal_button.configure(text="Reveal example  (Space)", state="normal")
         self.remembered_button.configure(state="disabled")
         self.again_button.configure(state="disabled")
 
     def _reveal(self):
-        if not self.session or not self.session.reveal():
+        if not self.session:
+            return
+        stage = self.session.reveal()
+        if not stage:
             return
         card = self.session.current
-        self.card_answer.set(f"Italian: {card['definition_it']}\n\nEnglish: {card['gloss_en']}\n\n"
-                             f"Example: {card['example_it']}")
-        self.reveal_button.configure(state="disabled")
-        self.remembered_button.configure(state="normal")
-        self.again_button.configure(state="normal")
+        if stage == 1:
+            self.card_answer.set(f"Example: {card['example_it']}\n\n"
+                                 "Reveal again for the English meaning and Italian definition.")
+            self.reveal_button.configure(text="Reveal answer  (Space)")
+        else:
+            self.card_answer.set(f"Example: {card['example_it']}\n\nEnglish: {card['gloss_en']}\n\n"
+                                 f"Italian: {card['definition_it']}")
+            self.reveal_button.configure(state="disabled")
+            self.remembered_button.configure(state="normal")
+            self.again_button.configure(state="normal")
 
     def _answer(self, remembered):
         if not self.session or not self.session.revealed:
