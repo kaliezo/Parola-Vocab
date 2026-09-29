@@ -1,0 +1,2 @@
+# Qt Core, GUI, and Widgets without unused Qt add-on modules.
+PySide6-Essentials==6.11.2

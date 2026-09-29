@@ -1,38 +1,48 @@
 @echo off
 setlocal
-
 pushd "%~dp0" >nul 2>&1
 if errorlevel 1 goto folder_error
 
-py -3 -c "import tkinter, sqlite3" >nul 2>&1
-if not errorlevel 1 goto run_py
+if exist ".venv\Scripts\python.exe" (
+    set "app_python=.venv\Scripts\python.exe"
+    goto check_python
+)
+py -3 -c "import sys" >nul 2>&1
+if not errorlevel 1 (
+    set "app_python=py -3"
+    goto check_python
+)
+python -c "import sys" >nul 2>&1
+if not errorlevel 1 (
+    set "app_python=python"
+    goto check_python
+)
+echo Python 3 was not found. Install Python 3.10 or newer, then try again.
+goto failed
 
-python -c "import tkinter, sqlite3" >nul 2>&1
-if not errorlevel 1 goto run_python
+:check_python
+%app_python% -c "import PySide6, sqlite3" >nul 2>&1
+if errorlevel 1 (
+    echo PySide6 is missing. In this folder run:
+    echo   py -3 -m venv .venv
+    echo   .venv\Scripts\python.exe -m pip install -r requirements.lock
+    goto failed
+)
+%app_python% qt_app.py
+set "app_exit=%errorlevel%"
+if not "%app_exit%"=="0" goto failed_code
+popd
+exit /b 0
 
-echo Python 3 with Tkinter and SQLite was not found.
-echo Install Python for Windows, then run this file again.
+:failed_code
+echo Italian Vocabulary stopped with error code %app_exit%.
+pause
+popd
+exit /b %app_exit%
+:failed
 pause
 popd
 exit /b 1
-
-:run_py
-py -3 app.py
-goto finished
-
-:run_python
-python app.py
-
-:finished
-set "app_exit=%errorlevel%"
-if not "%app_exit%"=="0" (
-    echo.
-    echo Italian Vocabulary stopped with error code %app_exit%.
-    pause
-)
-popd
-exit /b %app_exit%
-
 :folder_error
 echo Could not open the Italian Vocabulary folder.
 pause
