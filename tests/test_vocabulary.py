@@ -12,7 +12,8 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from app import VocabularyApp
-from classifier import (ClassificationCancelled, ClassifierError, explain_failure, load_json_strict,
+from classifier import (ClassificationCancelled, ClassifierError, _stop_process,
+                        explain_failure, load_json_strict,
                         run_codex, validate_response)
 from profiles import ProfileStore
 from storage import VocabularyDB
@@ -705,6 +706,16 @@ target.write_text(json.dumps({"schema_version":1,"request_id":request["request_i
 
 
 class ClassifierSubprocessTests(unittest.TestCase):
+    def test_windows_cancel_falls_back_if_taskkill_is_missing(self):
+        stopped = []
+        proc = SimpleNamespace(pid=42, poll=lambda: None,
+                               terminate=lambda: stopped.append("terminated"),
+                               communicate=lambda timeout=None: ("", ""))
+        with patch("classifier.os.name", "nt"), \
+                patch("classifier.subprocess.run", side_effect=FileNotFoundError):
+            _stop_process(proc)
+        self.assertEqual(stopped, ["terminated"])
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.executable = Path(self.temp.name) / "fake-codex"

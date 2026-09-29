@@ -119,16 +119,32 @@ def safe_child_environment():
 
 
 def _stop_process(proc):
-    try:
-        os.killpg(proc.pid, signal.SIGTERM)
-    except ProcessLookupError:
-        pass
+    if os.name == "nt":
+        try:
+            result = subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"],
+                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                    timeout=3, check=False)
+        except (OSError, subprocess.TimeoutExpired):
+            result = None
+        if (result is None or result.returncode != 0) and proc.poll() is None:
+            try:
+                proc.terminate()
+            except OSError:
+                pass
+    else:
+        try:
+            os.killpg(proc.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
     try:
         proc.communicate(timeout=3)
     except subprocess.TimeoutExpired:
         try:
-            os.killpg(proc.pid, signal.SIGKILL)
-        except ProcessLookupError:
+            if os.name == "nt":
+                proc.kill()
+            else:
+                os.killpg(proc.pid, signal.SIGKILL)
+        except OSError:
             pass
         proc.communicate()
 
@@ -159,24 +175,28 @@ def run_codex(request, *, model="gpt-6-sol", effort="high", timeout=900,
         raise ValueError("Model is required.")
     if not 30 <= int(timeout) <= 3600:
         raise ValueError("Timeout must be 30 to 3600 seconds.")
-    if shutil.which(executable) is None:
+    resolved_executable = shutil.which(executable)
+    if resolved_executable is None:
         raise ClassifierError("Codex CLI was not found. Install the official Codex CLI and run 'codex login'.")
     cancel_event = cancel_event or threading.Event()
     input_text = build_prompt(request)
     with tempfile.TemporaryDirectory(prefix="italian-vocabulary-") as directory:
         job_dir = Path(directory).resolve()
         result_path = job_dir / "result.json"
-        args = [executable, "exec", "--ignore-user-config", "--ignore-rules",
+        args = [resolved_executable, "exec", "--ignore-user-config", "--ignore-rules",
                 "--skip-git-repo-check", "--ephemeral", "--sandbox", "read-only",
                 "--model", model.strip(), "-c", f'model_reasoning_effort="{effort}"',
                 "-c", 'forced_login_method="chatgpt"', "-c", 'approval_policy="never"',
                 "-c", "mcp_servers={}", "-c", "hooks={}",
                 "--cd", str(job_dir), "--output-schema", str(SCHEMA_PATH),
                 "--output-last-message", str(result_path), "-"]
+        process_options = ({"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP,
+                            "shell": resolved_executable.lower().endswith((".cmd", ".bat"))}
+                           if os.name == "nt" else {"start_new_session": True})
         try:
             proc = subprocess.Popen(args, cwd=job_dir, env=safe_child_environment(),
                                     stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE, text=True, start_new_session=True)
+                                    stderr=subprocess.PIPE, text=True, **process_options)
         except OSError as exc:
             raise ClassifierError(f"Could not start Codex: {exc}") from exc
         deadline = time.monotonic() + int(timeout)

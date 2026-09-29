@@ -42,6 +42,12 @@ python3 create_desktop_launcher.py --install
 
 This writes `italian-vocabulary.desktop` to `$XDG_DATA_HOME/applications` when `XDG_DATA_HOME` is an absolute path, or to `~/.local/share/applications` otherwise. It does not require administrator privileges or change system-wide launchers. It also generates `Italian Vocabulary.desktop` inside this project. If the project is moved, run the command again with `--replace` to update the installed path. The script refuses to replace a different existing launcher unless you supply that flag. KDE may need `kbuildsycoca6` or a logout and login before its search index refreshes.
 
+## Set up and run on Windows 10
+
+Install Python 3 for Windows with Tcl/Tk support from the [official Python site](https://www.python.org/downloads/windows/). No compilation, virtual environment, or extra Python packages are needed. Download and extract the complete repository folder, then double-click `run_windows.bat` inside it. The launcher also works when the folder path contains spaces. It checks for Python with Tkinter and SQLite, runs `app.py`, and keeps the console open if startup fails so you can read the error. Profiles are created locally on that Windows account; they are not downloaded from GitHub.
+
+Offline library and study features work without Codex. AI evaluation additionally requires the official Codex CLI installed and signed in on that Windows computer. The Windows launcher has no dependency on the Linux `run.sh` script.
+
 ## Profiles
 
 The first launch asks you to name a profile. **Use the default deck** adds 7,695 study-ready cards, with definitions, English glosses, examples, difficulty ratings, source tags, and A2 learner settings. The bundled deck contains no personal notes, study history, or evaluation request logs. **Start from zero** creates an empty library with the same initial evaluation settings. You can add words in Library at any time.
