@@ -36,7 +36,7 @@ Library places quick add, search, compact counts, filters, and evaluation contro
 
 The Filters panel separates difficulty from source CEFR level and includes needs-review entries. Counts describe all entries; the shown count describes the current result. More actions contains prompt export and copy, AI JSON import, text-only starter collection import, backup export and import, and explicit retry of reviewed entries. Native file pickers select real files and folders.
 
-Study has setup, active card, and completed round states. Choose Easy, Medium, Hard, topic, source level, and 10, 20, All, or Custom cards. The count shows matching study-ready cards and incomplete entries. Active cards show only Italian at first, then reveal the example, then the English meaning and Italian definition. Remembered and Again become available only after the full answer. Another round uses Again cards. Results show round and cumulative answers. Study uses weighted recall selection, not a timed due-date schedule.
+Study has setup, active card, and completed round states. Choose Easy, Medium, Hard, topic, source level, and 10, 20, All, or Custom cards. The count shows matching study-ready cards and incomplete entries. Evaluation and entry editing stay in Library. Active cards show only Italian at first, then reveal the example, then the English meaning and Italian definition. Remembered and Again become available only after the full answer. Another round uses Again cards. Results show round and cumulative answers. Study uses weighted recall selection, not a timed due-date schedule.
 
 Keyboard: Enter adds from the Library quick-add field; Ctrl+F focuses Library search; Ctrl+S saves a dirty Library editor; Space reveals in an active card; R records Remembered; A records Again. Study shortcuts are ignored while typing in editable controls. Normal text editing and accented Italian input use Qt's native controls.
 
@@ -55,8 +55,8 @@ On Linux, profile databases live at `$XDG_DATA_HOME/italian_vocabulary/profiles/
 Run from this directory:
 
 ```bash
-python3 -m py_compile app.py qt_app.py qt_theme.py service.py classifier.py storage.py study.py starter.py profiles.py create_desktop_launcher.py tests/test_vocabulary.py
+python3 -m py_compile app.py qt_app.py qt_theme.py service.py classifier.py storage.py study.py starter.py profiles.py create_desktop_launcher.py tests/test_vocabulary.py tests/test_qt_service.py
 python3 -m unittest discover -s tests -v
 ```
 
-Tests use temporary profile stores and SQLite databases. Do not run GUI or Codex tests against a real profile merely for validation. The optional UI smoke checks in `tests/test_qt_app.py` use Qt's offscreen platform and temporary profiles.
+Tests use temporary profile stores and SQLite databases. Do not run GUI or Codex tests against a real profile merely for validation. The UI smoke checks in `tests/test_qt_service.py` use Qt's offscreen platform and temporary profiles.

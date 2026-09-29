@@ -841,12 +841,8 @@ class MainWindow(QMainWindow):
         setup_layout.addWidget(self.study_count)
         self.start_button = button("Start session", self.start_study, "primary")
         setup_layout.addWidget(self.start_button, alignment=Qt.AlignmentFlag.AlignLeft)
-        help_row = QHBoxLayout()
-        help_row.addWidget(label("Missing cards? Evaluate Unknown words or complete entries in Library.", "muted", True), 1)
-        self.study_evaluate = button("Evaluate pending", self.evaluate)
-        help_row.addWidget(self.study_evaluate)
-        help_row.addWidget(button("Open Library", lambda: self.tabs.setCurrentIndex(0)))
-        setup_layout.addLayout(help_row)
+        setup_layout.addWidget(label(
+            "Missing cards? Evaluate Unknown words or complete entries in Library.", "muted", True))
         setup_layout.addWidget(label("Lower estimated recall increases selection chance. This is not a due-date schedule.", "muted", True))
         setup_layout.addStretch(1)
         setup_scroll.setWidget(setup)
@@ -1202,7 +1198,6 @@ class MainWindow(QMainWindow):
         state = self.service.evaluation
         running = self.service.running
         self.evaluate_button.setEnabled(not running)
-        self.study_evaluate.setEnabled(not running)
         self.cancel_button.setVisible(running)
         self.cancel_button.setEnabled(state["state"] == "running")
         if state["batches"]:
