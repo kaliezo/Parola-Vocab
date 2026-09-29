@@ -15,7 +15,7 @@ from classifier import (ClassificationCancelled, SCHEMA_PATH,
 from profiles import ProfileStore
 from storage import ALL_STUDY_LEVELS, DIFFICULTIES, STUDY_LEVELS, VocabularyDB
 from starter import LEVELS, load_starter_catalog, starter_counts
-from study import StudySession, recall_estimate, recall_label
+from study import StudySession, parse_session_size, recall_estimate, recall_label
 from topics import ALL_TOPICS, TOPICS, topics_for_card
 
 
@@ -473,8 +473,14 @@ class VocabularyApp(tk.Tk):
                             command=self._refresh_study_count).pack(side="left", padx=7)
         ttk.Label(option_row, text="SESSION SIZE", style="Field.TLabel").pack(side="left", padx=(24, 8))
         self.session_size = tk.StringVar(value="20")
-        ttk.Combobox(option_row, textvariable=self.session_size, values=("10", "20", "All"),
-                     width=7, state="readonly").pack(side="left")
+        session_size_menu = ttk.Combobox(option_row, textvariable=self.session_size,
+                                         values=("10", "20", "All", "Custom"),
+                                         width=9, state="readonly")
+        session_size_menu.pack(side="left")
+        session_size_menu.bind("<<ComboboxSelected>>", self._on_session_size_selected)
+        self.custom_session_size = tk.StringVar()
+        self.custom_size_entry = ttk.Entry(option_row, textvariable=self.custom_session_size,
+                                           width=8)
         ttk.Button(option_row, text="Start session", style="Accent.TButton",
                    command=self._start_study).pack(side="right")
         topic_row = ttk.Frame(options, style="Panel.TFrame")
@@ -1170,6 +1176,13 @@ class VocabularyApp(tk.Tk):
     def _chosen_study_difficulties(self):
         return [key for key, var in self.study_filters.items() if var.get()]
 
+    def _on_session_size_selected(self, _event=None):
+        if self.session_size.get() == "Custom":
+            self.custom_size_entry.pack(side="left", padx=(8, 0))
+            self.custom_size_entry.focus_set()
+        else:
+            self.custom_size_entry.pack_forget()
+
     def _refresh_study_count(self):
         if not hasattr(self, "study_count"):
             return
@@ -1234,7 +1247,12 @@ class VocabularyApp(tk.Tk):
             else:
                 self._message("No cards match this topic, word level, and difficulty selection.")
             return
-        size = "all" if self.session_size.get() == "All" else self.session_size.get()
+        try:
+            size = parse_session_size(self.session_size.get(), self.custom_session_size.get())
+        except ValueError as exc:
+            self._message(str(exc))
+            self.custom_size_entry.focus_set()
+            return
         recent = self.db.recent_first_round_outcomes([row["id"] for row in ready])
         self.session = StudySession(ready, size, recent_outcomes=recent)
         self.another_button.configure(state="disabled")

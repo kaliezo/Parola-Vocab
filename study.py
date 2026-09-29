@@ -5,6 +5,26 @@ import random
 from uuid import uuid4
 
 
+def parse_session_size(selection, custom=""):
+    """Translate the Study control into a card count or all cards."""
+    if selection == "All":
+        return "all"
+    if selection in ("10", "20"):
+        return int(selection)
+    if selection != "Custom":
+        raise ValueError("Choose a session size.")
+    value = custom.strip()
+    if not value.isascii() or not value.isdecimal():
+        raise ValueError("Enter a positive whole number for the custom session size.")
+    try:
+        count = int(value)
+    except ValueError as exc:
+        raise ValueError("Enter a valid whole number for the custom session size.") from exc
+    if count < 1:
+        raise ValueError("Custom session size must be at least 1.")
+    return count
+
+
 def recall_estimate(entry, recent_first_round=()):
     """Estimate recall with a neutral prior and extra weight for recent sessions."""
     attempts = entry["study_attempts"]

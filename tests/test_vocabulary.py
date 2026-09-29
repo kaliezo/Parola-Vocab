@@ -17,7 +17,8 @@ from classifier import (ClassificationCancelled, ClassifierError, explain_failur
 from profiles import ProfileStore
 from storage import VocabularyDB
 from starter import load_starter_catalog, starter_counts
-from study import StudySession, choose_cards, recall_estimate, recall_label, selection_weight
+from study import (StudySession, choose_cards, parse_session_size, recall_estimate,
+                   recall_label, selection_weight)
 from topics import ALL_TOPICS, TOPICS, topics_for_text
 
 
@@ -606,6 +607,17 @@ def study_entry(entry_id, remembered, again):
 
 
 class AdaptiveStudyTests(unittest.TestCase):
+    def test_custom_session_size_accepts_positive_counts_and_rejects_invalid_input(self):
+        self.assertEqual(parse_session_size("Custom", " 37 "), 37)
+        self.assertEqual(parse_session_size("10"), 10)
+        self.assertEqual(parse_session_size("20"), 20)
+        self.assertEqual(parse_session_size("All"), "all")
+        pool = [study_entry(index, 0, 0) for index in range(1, 6)]
+        self.assertEqual(len(StudySession(pool, parse_session_size("Custom", "99")).cards), 5)
+        for invalid in ("", "0", "-3", "2.5", "five"):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                parse_session_size("Custom", invalid)
+
     def test_smoothed_recall_and_recent_lapses(self):
         new = study_entry(1, 0, 0)
         once = study_entry(2, 1, 0)
