@@ -14,7 +14,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from PySide6.QtWidgets import QApplication
 
 from profiles import ProfileStore
-from qt_app import MainWindow
+from qt_app import MainWindow, sort_library_rows
 from service import VocabularyService
 from topics import ALL_TOPICS
 from storage import ALL_STUDY_LEVELS
@@ -154,6 +154,33 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(len(self.service.evaluation_snapshot()), 1)
 
 
+class LibrarySortTests(unittest.TestCase):
+    def test_every_heading_uses_its_requested_first_and_reverse_order(self):
+        rows = [
+            {"id": 1, "original_text": "alpha", "starter_level": "A1",
+             "difficulty": "easy", "content_ready": 1, "study_attempts": 4, "remembered_count": 4},
+            {"id": 2, "original_text": "beta", "starter_level": "B2",
+             "difficulty": "hard", "content_ready": 0, "study_attempts": 4, "remembered_count": 0},
+            {"id": 3, "original_text": "delta", "starter_level": "A2",
+             "difficulty": "medium", "content_ready": 1, "study_attempts": 4, "remembered_count": 2},
+            {"id": 4, "original_text": "gamma", "starter_level": None,
+             "difficulty": "unknown", "content_ready": 0, "study_attempts": 0, "remembered_count": 0},
+        ]
+        recent = {1: [1, 1, 1, 1], 2: [0, 0, 0, 0]}
+        expected = {
+            0: ([4, 3, 2, 1], [1, 2, 3, 4]),
+            1: ([2, 3, 1, 4], [1, 3, 2, 4]),
+            2: ([2, 3, 1, 4], [1, 3, 2, 4]),
+            3: ([2, 4, 1, 3], [1, 3, 2, 4]),
+            4: ([2, 3, 4, 1], [1, 3, 4, 2]),
+        }
+        self.assertIs(sort_library_rows(rows, recent, None, True), rows)
+        for column, (first, second) in expected.items():
+            with self.subTest(column=column):
+                self.assertEqual([item["id"] for item in sort_library_rows(rows, recent, column, True)], first)
+                self.assertEqual([item["id"] for item in sort_library_rows(rows, recent, column, False)], second)
+
+
 class QtSmokeTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -187,6 +214,48 @@ class QtSmokeTests(unittest.TestCase):
         self.assertEqual(self.window.model.rowCount(), 0)
         self.window.reset_filters()
         self.assertEqual(self.window.model.rowCount(), 2)
+
+    def test_header_click_sorts_filtered_rows_and_keeps_selection(self):
+        ids = {word: self.service.add(word)[0] for word in ("alpha", "beta", "gamma")}
+        self.window.refresh_library()
+        self.assertEqual([item["original_text"] for item in self.window.model.rows],
+                         ["alpha", "beta", "gamma"])
+        self.window.table.selectRow(1)
+        self.assertEqual(self.window.selected_id, ids["beta"])
+        self.window.detail_fields["notes"].setPlainText("Draft kept during sorting")
+        header = self.window.table.horizontalHeader()
+        self.assertTrue(header.sectionsClickable())
+        header.sectionClicked.emit(0)
+        self.assertEqual([item["original_text"] for item in self.window.model.rows],
+                         ["gamma", "beta", "alpha"])
+        self.assertEqual(self.window.selected_id, ids["beta"])
+        self.assertEqual(self.window.detail_fields["notes"].toPlainText(),
+                         "Draft kept during sorting")
+        self.assertEqual(self.window.model.rows[self.window.table.currentIndex().row()]["id"], ids["beta"])
+        header.sectionClicked.emit(0)
+        self.assertEqual([item["original_text"] for item in self.window.model.rows],
+                         ["alpha", "beta", "gamma"])
+        self.window.search.setText("beta")
+        self.window.refresh_library()
+        self.assertEqual([item["id"] for item in self.window.model.rows], [ids["beta"]])
+        self.window.search.clear()
+        self.window.refresh_library()
+        self.assertEqual([item["original_text"] for item in self.window.model.rows],
+                         ["alpha", "beta", "gamma"])
+        self.window.detail_fields["notes"].clear()
+
+    def test_study_heading_uses_saved_recall_and_refreshes_order(self):
+        alpha, _ = self.service.add("alpha")
+        beta, _ = self.service.add("beta")
+        self.service.db.record_study(alpha, True)
+        self.service.db.record_study(beta, False)
+        self.window.refresh_library()
+        self.window.table.horizontalHeader().sectionClicked.emit(4)
+        self.assertEqual([item["id"] for item in self.window.model.rows], [beta, alpha])
+        for _ in range(3):
+            self.service.db.record_study(beta, True)
+        self.window.refresh_library()
+        self.assertEqual([item["id"] for item in self.window.model.rows], [alpha, beta])
 
     def test_study_stages_and_single_rating(self):
         entry_id, _ = self.service.add("casa")

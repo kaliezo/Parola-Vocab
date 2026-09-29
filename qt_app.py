@@ -62,6 +62,32 @@ def message(parent, title, text, *, question=False):
     return False
 
 
+def sort_library_rows(rows, recent, column, first_click):
+    """Sort filtered database rows without changing their saved values."""
+    if column is None:
+        return rows
+    if column == 0:
+        # The database already supplies the normal word order.
+        return list(reversed(rows)) if first_click else rows
+    if column == 1:
+        levels = ("B2", "B1", "A2", "A1") if first_click else ("A1", "A2", "B1", "B2")
+        rank = {level: index for index, level in enumerate(levels)}
+        return sorted(rows, key=lambda item: rank.get(item["starter_level"], 4))
+    if column == 2:
+        difficulties = ("hard", "medium", "easy") if first_click else ("easy", "medium", "hard")
+        rank = {difficulty: index for index, difficulty in enumerate(difficulties)}
+        return sorted(rows, key=lambda item: rank.get(item["difficulty"], 3))
+    if column == 3:
+        def ready(item):
+            return item["difficulty"] != "unknown" and bool(item["content_ready"])
+        return sorted(rows, key=ready, reverse=not first_click)
+    if column == 4:
+        return sorted(rows,
+                      key=lambda item: recall_estimate(item, recent.get(item["id"], ())),
+                      reverse=not first_click)
+    raise ValueError("Unknown library sort column.")
+
+
 class LibraryModel(QAbstractTableModel):
     HEADERS = ("Word / expression", "Source level", "Difficulty", "Content", "Study")
 
@@ -78,8 +104,17 @@ class LibraryModel(QAbstractTableModel):
         return 0 if parent.isValid() else 5
 
     def headerData(self, section, orientation, role=Qt.ItemDataRole.DisplayRole):
-        if role == Qt.ItemDataRole.DisplayRole and orientation == Qt.Orientation.Horizontal:
-            return self.HEADERS[section]
+        if orientation == Qt.Orientation.Horizontal and 0 <= section < len(self.HEADERS):
+            if role == Qt.ItemDataRole.DisplayRole:
+                return self.HEADERS[section]
+            if role == Qt.ItemDataRole.ToolTipRole:
+                return (
+                    "Sort Z to A, then A to Z",
+                    "Sort B2 to A1, then A1 to B2; Personal last",
+                    "Sort Hard to Easy, then Easy to Hard; Unknown last",
+                    "Show unready first, then ready first",
+                    "Show lowest estimated recall first, then highest",
+                )[section]
         return None
 
     def data(self, index, role=Qt.ItemDataRole.DisplayRole):
@@ -205,6 +240,8 @@ class MainWindow(QMainWindow):
         self.selecting = False
         self.closing_wait = False
         self.last_add_success = 0.0
+        self.sort_column = None
+        self.sort_first_click = True
         self.setWindowTitle("Italian Vocabulary")
         self.resize(1200, 840)
         self.setMinimumSize(900, 630)
@@ -357,9 +394,13 @@ class MainWindow(QMainWindow):
         self.table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
         self.table.setEditTriggers(QTableView.EditTrigger.NoEditTriggers)
         self.table.setSortingEnabled(False)
+        header = self.table.horizontalHeader()
+        header.setSectionsClickable(True)
+        header.setSortIndicatorShown(False)
+        header.sectionClicked.connect(self.sort_library)
         self.table.verticalHeader().hide()
         self.table.verticalHeader().setDefaultSectionSize(34)
-        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
         self.table.setColumnWidth(0, 260)
         for column, width in ((1, 90), (2, 90), (3, 115), (4, 135)):
             self.table.setColumnWidth(column, width)
@@ -560,6 +601,31 @@ class MainWindow(QMainWindow):
             return
         self.load_detail(entry_id) if entry_id is not None else self.clear_detail()
 
+    def sort_library(self, column):
+        if column == self.sort_column:
+            self.sort_first_click = not self.sort_first_click
+        else:
+            self.sort_column = column
+            self.sort_first_click = True
+        first_descending = column in (0, 1, 2)
+        descending = first_descending == self.sort_first_click
+        header = self.table.horizontalHeader()
+        header.setSortIndicator(column, Qt.SortOrder.DescendingOrder if descending else Qt.SortOrder.AscendingOrder)
+        header.setSortIndicatorShown(True)
+        self.refresh_library()
+        self.table.verticalScrollBar().setValue(0)
+        first_labels = (
+            "Word: Z to A", "Source level: B2 to A1, Personal last",
+            "Difficulty: Hard to Easy, Unknown last", "Content: unready first",
+            "Study: lowest estimated recall first",
+        )
+        second_labels = (
+            "Word: A to Z", "Source level: A1 to B2, Personal last",
+            "Difficulty: Easy to Hard, Unknown last", "Content: ready first",
+            "Study: highest estimated recall first",
+        )
+        self.say("Sorted by " + (first_labels if self.sort_first_click else second_labels)[column] + ".")
+
     def refresh_library(self, select_id=None):
         if self.service.db is None:
             return
@@ -575,6 +641,7 @@ class MainWindow(QMainWindow):
             pending = self.service.db.pending_recheck_ids()
             counts = self.service.db.counts()
             reviewed = self.service.db.review_count()
+            rows = sort_library_rows(rows, recent, self.sort_column, self.sort_first_click)
         except (OSError, ValueError, sqlite3.Error) as exc:
             self.fail("Could not refresh library", exc)
             return
@@ -1034,6 +1101,8 @@ class MainWindow(QMainWindow):
             self.again_button.setEnabled(True)
             return
         self.model.update_entry(entry_id, self.service.db)
+        if self.sort_column == 4:
+            self.refresh_library()
         if self.selected_id == entry_id and not self.is_dirty():
             self.load_detail(entry_id)
         self.remembered_button.setEnabled(True)
