@@ -147,7 +147,8 @@ class VocabularyDB:
         ).fetchone()
         return dict(row) if row else None
 
-    def list_entries(self, search="", difficulties=None, starter_levels=None, review_only=False):
+    def list_entries(self, search="", difficulties=None, starter_levels=None,
+                     review_only=False, *, library_view=False):
         difficulties = tuple(DIFFICULTIES if difficulties is None else difficulties)
         if not difficulties:
             return []
@@ -171,9 +172,17 @@ class VocabularyDB:
             args.extend((term, term, term))
         if review_only:
             clauses.append("e.difficulty='unknown' AND e.review_note IS NOT NULL")
+        columns = (
+            "e.id, e.original_text, e.difficulty, e.review_note, e.study_attempts, "
+            "e.remembered_count, e.again_count, s.cefr_level AS starter_level, "
+            "CASE WHEN TRIM(COALESCE(e.definition_it, '')) != '' "
+            "AND TRIM(COALESCE(e.gloss_en, '')) != '' "
+            "AND TRIM(COALESCE(e.example_it, '')) != '' THEN 1 ELSE 0 END AS content_ready"
+            if library_view else "e.*, s.cefr_level AS starter_level, s.kind AS starter_kind"
+        )
         rows = self.conn.execute(
-            "SELECT e.*, s.cefr_level AS starter_level, s.kind AS starter_kind "
-            "FROM entries e LEFT JOIN starter_catalog s ON s.entry_id=e.id WHERE " +
+            "SELECT " + columns + " FROM entries e "
+            "LEFT JOIN starter_catalog s ON s.entry_id=e.id WHERE " +
             " AND ".join(clauses) + " ORDER BY e.original_text COLLATE NOCASE, e.id",
             args,
         ).fetchall()

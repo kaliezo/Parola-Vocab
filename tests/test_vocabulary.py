@@ -244,6 +244,26 @@ class StorageTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.db.study_pool(("easy",), level="C1")
 
+    def test_library_view_keeps_filters_and_ready_status_without_full_content(self):
+        ready_id, _ = self.db.add("casa")
+        self.db.update(ready_id, original_text="casa", context="", notes="",
+                       difficulty="easy", definition_it="Una casa.", gloss_en="house",
+                       example_it="La mia casa.", difficulty_reason="")
+        other_id, _ = self.db.add("pane")
+        self.db.update(other_id, original_text="pane", context="", notes="bakery note",
+                       difficulty="unknown", definition_it="", gloss_en="", example_it="",
+                       difficulty_reason="")
+        full = self.db.list_entries()
+        compact = self.db.list_entries(library_view=True)
+        self.assertEqual([row["id"] for row in compact], [row["id"] for row in full])
+        self.assertEqual({row["id"]: row["content_ready"] for row in compact},
+                         {ready_id: 1, other_id: 0})
+        self.assertNotIn("definition_it", compact[0])
+        self.assertEqual([row["id"] for row in
+                          self.db.list_entries(search="bakery", library_view=True)], [other_id])
+        self.assertEqual([row["id"] for row in
+                          self.db.list_entries(difficulties=["easy"], library_view=True)], [ready_id])
+
     def test_reviewed_entry_is_skipped_until_context_changes(self):
         reviewed_id, _ = self.db.add("piano")
         ready_id, _ = self.db.add("casa")
@@ -971,6 +991,84 @@ class ParallelEvaluationTests(unittest.TestCase):
 
 
 class StudyWorkflowTests(unittest.TestCase):
+    def test_library_tree_reuses_unchanged_rows_and_preserves_order(self):
+        class Tree:
+            def __init__(self):
+                self.order = []
+                self.values = {}
+                self.changes = []
+
+            def delete(self, *items):
+                for item in items:
+                    self.order.remove(item)
+                    del self.values[item]
+                self.changes.append("delete")
+
+            def insert(self, _parent, index, *, iid, values):
+                self.order.insert(index, iid)
+                self.values[iid] = values
+                self.changes.append("insert")
+
+            def item(self, item, *, values):
+                self.values[item] = values
+                self.changes.append("update")
+
+            def move(self, item, _parent, index):
+                self.order.remove(item)
+                self.order.insert(index, item)
+                self.changes.append("move")
+
+        tree = Tree()
+        fake = SimpleNamespace(tree=tree, _tree_rows={}, _tree_order=[])
+        first = [("1", ("a",)), ("2", ("b",)), ("3", ("c",))]
+        VocabularyApp._render_library_rows(fake, first)
+        tree.changes.clear()
+        VocabularyApp._render_library_rows(fake, first)
+        self.assertEqual(tree.changes, [])
+        VocabularyApp._render_library_rows(fake, [("1", ("a",)), ("2", ("changed",)),
+                                                  ("3", ("c",))])
+        self.assertEqual(tree.changes, ["update"])
+        tree.changes.clear()
+        VocabularyApp._render_library_rows(fake, [("2", ("changed",)), ("3", ("c",))])
+        self.assertEqual(tree.order, ["2", "3"])
+        VocabularyApp._render_library_rows(fake, [("1", ("a",)), ("2", ("changed",)),
+                                                  ("3", ("c",))])
+        self.assertEqual(tree.order, ["1", "2", "3"])
+        VocabularyApp._render_library_rows(fake, [("3", ("c",)), ("2", ("changed",)),
+                                                  ("4", ("d",))])
+        self.assertEqual(tree.order, ["3", "2", "4"])
+
+    def test_study_result_updates_only_its_visible_library_row(self):
+        with tempfile.TemporaryDirectory() as directory:
+            db = VocabularyDB(Path(directory) / "study-row.sqlite3")
+            try:
+                entry_id, _ = db.add("casa")
+                key = str(entry_id)
+                previous = ("casa", "-", "Easy", "Ready", "0/0 - New")
+                updated_items = []
+                fake = SimpleNamespace(
+                    db=db, _tree_rows={key: previous},
+                    tree=SimpleNamespace(item=lambda item, **kw: updated_items.append((item, kw))),
+                    _selected_id=lambda: None,
+                )
+                db.record_study(entry_id, True)
+                VocabularyApp._refresh_study_result(fake, entry_id)
+                self.assertEqual(fake._tree_rows[key][-1], "1/1 - Building")
+                self.assertEqual(updated_items, [(key, {"values": fake._tree_rows[key]})])
+                self.assertEqual(fake._tree_rows[key][:-1], previous[:-1])
+            finally:
+                db.close()
+
+    def test_study_count_refreshes_when_study_tab_opens(self):
+        refreshed = []
+        fake = SimpleNamespace(tabs=SimpleNamespace(select=lambda: "study"),
+                               study_tab="study", _refresh_study_count=lambda: refreshed.append(True))
+        VocabularyApp._on_tab_changed(fake)
+        self.assertEqual(refreshed, [True])
+        fake.tabs.select = lambda: "library"
+        VocabularyApp._on_tab_changed(fake)
+        self.assertEqual(refreshed, [True])
+
     def test_reveal_shows_example_before_answer(self):
         card = {**study_entry(1, 0, 0), "original_text": "discutere",
                 "example_it": "Discutiamo dopo cena.", "gloss_en": "to discuss",
@@ -1006,8 +1104,9 @@ class StudyWorkflowTests(unittest.TestCase):
             try:
                 entry_id, _ = db.add("casa")
                 session = StudySession([study_entry(entry_id, 0, 0)], "all")
+                refreshed = []
                 fake = SimpleNamespace(db=db, session=session, _show_card=lambda: None,
-                                       _refresh_library=lambda: None)
+                                       _refresh_study_result=refreshed.append)
                 session.reveal()
                 session.reveal()
                 VocabularyApp._answer(fake, False)
@@ -1019,6 +1118,7 @@ class StudyWorkflowTests(unittest.TestCase):
                 VocabularyApp._answer(fake, True)
                 self.assertEqual(db.recent_first_round_outcomes([entry_id]), {entry_id: [0]})
                 self.assertEqual(db.get(entry_id)["remembered_count"], 1)
+                self.assertEqual(refreshed, [entry_id, entry_id])
                 rows = db.conn.execute("SELECT DISTINCT session_id FROM study_reviews").fetchall()
                 self.assertEqual([row[0] for row in rows], [session.session_id])
             finally:

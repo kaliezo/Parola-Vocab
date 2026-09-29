@@ -269,6 +269,7 @@ class VocabularyApp(tk.Tk):
         self._build_library()
         self._build_study()
         self._build_settings()
+        self.tabs.bind("<<NotebookTabChanged>>", self._on_tab_changed)
         self.bind("<space>", self._study_key)
         self.bind("<Key-r>", self._study_key)
         self.bind("<Key-a>", self._study_key)
@@ -371,6 +372,8 @@ class VocabularyApp(tk.Tk):
         tree_frame.pack(fill="both", expand=True)
         self.tree = ttk.Treeview(tree_frame, columns=("word", "level", "difficulty", "content", "reviews"),
                                  show="headings", selectmode="browse")
+        self._tree_rows = {}
+        self._tree_order = []
         for column, title, width in (("word", "Word / expression", 220),
                                      ("level", "CEFR", 62),
                                      ("difficulty", "Difficulty", 100),
@@ -628,6 +631,31 @@ class VocabularyApp(tk.Tk):
         self.entry.focus_set()
         self._message("Saved under Unknown." if created else "Already saved. Selected the existing entry.")
 
+    def _render_library_rows(self, display_rows):
+        previous = self._tree_rows
+        old_order = self._tree_order
+        new_order = [entry_id for entry_id, _values in display_rows]
+        new_ids = set(new_order)
+        removed = [entry_id for entry_id in old_order if entry_id not in new_ids]
+        if removed:
+            self.tree.delete(*removed)
+        reordered = ([entry_id for entry_id in old_order if entry_id in new_ids] !=
+                     [entry_id for entry_id in new_order if entry_id in previous])
+        for index, (entry_id, values) in enumerate(display_rows):
+            if entry_id in previous:
+                if previous[entry_id] != values:
+                    self.tree.item(entry_id, values=values)
+                if reordered:
+                    self.tree.move(entry_id, "", index)
+            else:
+                self.tree.insert("", index, iid=entry_id, values=values)
+        self._tree_rows = dict(display_rows)
+        self._tree_order = new_order
+
+    def _on_tab_changed(self, _event=None):
+        if self.tabs.select() == str(self.study_tab):
+            self._refresh_study_count()
+
     def _refresh_library(self, select_id=None):
         if not hasattr(self, "tree"):
             return
@@ -637,27 +665,26 @@ class VocabularyApp(tk.Tk):
         filters = [key for key, var in self.library_filters.items() if var.get()]
         levels = [key for key, var in self.starter_filters.items() if var.get()]
         rows = self.db.list_entries(self.search.get(), filters, levels,
-                                    review_only=self.review_only.get())
+                                    review_only=self.review_only.get(), library_view=True)
         recent = self.db.recent_first_round_outcomes([row["id"] for row in rows])
         pending_ids = self.db.pending_recheck_ids()
         self._refreshing_tree = True
         try:
-            children = self.tree.get_children()
-            if children:
-                self.tree.delete(*children)
+            display_rows = []
             for row in rows:
                 study = f"{row['remembered_count']}/{row['study_attempts']} - " \
                     f"{recall_label(row, recent.get(row['id'], ()))}"
                 content = ("Needs review" if row["difficulty"] == "unknown" and row["review_note"] else
                            "Unknown" if row["difficulty"] == "unknown" else
-                           "Ready" if all((row[key] or "").strip() for key in
-                                          ("definition_it", "gloss_en", "example_it")) else "Incomplete")
+                           "Ready" if row["content_ready"] else "Incomplete")
                 if row["id"] in pending_ids:
                     content += " - recheck due"
-                self.tree.insert("", "end", iid=str(row["id"]),
-                                 values=(row["original_text"], row["starter_level"] or "-",
-                                         row["difficulty"].title(), content, study))
-            if select_id is not None and self.tree.exists(str(select_id)):
+                display_rows.append((str(row["id"]),
+                                     (row["original_text"], row["starter_level"] or "-",
+                                      row["difficulty"].title(), content, study)))
+            self._render_library_rows(display_rows)
+            if (select_id is not None and self.tree.exists(str(select_id)) and
+                    self._selected_id() != select_id):
                 self.tree.selection_set(str(select_id))
                 self.tree.see(str(select_id))
         finally:
@@ -683,7 +710,8 @@ class VocabularyApp(tk.Tk):
                        "No words match this view.\n\nTry another search or difficulty filter.")
             self.list_empty.configure(text=message)
             self.list_empty.place(relx=0.5, rely=0.5, anchor="center")
-        self._refresh_study_count()
+        if self.tabs.select() == str(self.study_tab):
+            self._refresh_study_count()
         if hasattr(self, "recheck_status"):
             self._refresh_recheck_status()
 
@@ -1311,7 +1339,21 @@ class VocabularyApp(tk.Tk):
             return
         self.session.answer(remembered)
         self._show_card()
-        self._refresh_library()
+        self._refresh_study_result(entry_id)
+
+    def _refresh_study_result(self, entry_id):
+        entry_key = str(entry_id)
+        values = self._tree_rows.get(entry_key)
+        if values is None:
+            return
+        row = self.db.get(entry_id)
+        recent = self.db.recent_first_round_outcomes([entry_id]).get(entry_id, ())
+        study = f"{row['remembered_count']}/{row['study_attempts']} - {recall_label(row, recent)}"
+        updated = (*values[:-1], study)
+        self.tree.item(entry_key, values=updated)
+        self._tree_rows[entry_key] = updated
+        if self._selected_id() == entry_id and not self._detail_has_unsaved():
+            self._load_detail()
 
     def _another_round(self):
         if self.session and self.session.next_round():

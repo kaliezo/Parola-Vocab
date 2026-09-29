@@ -60,6 +60,8 @@ Type a word or short expression in the top field and press Enter. It is saved im
 
 Use the compact search field and toggle any difficulty or source-level filters. The Learning content column marks classified entries as Ready or Incomplete and flags those due for re-evaluation. Select an entry to edit its text, optional context sentence, notes, difficulty, definition, gloss, example, or difficulty reason. Save changes with **Save changes**. Changing its text or context resets it to Unknown and clears old classification content. Manual changes to difficulty or learning content take precedence over an old AI result. Notes and study counts remain. Delete requires confirmation.
 
+Library refreshes reuse unchanged rows and avoid jumping back to an already selected row. A saved study answer updates its own row without rebuilding the whole list. The Study count refreshes when you open Study and when its filters change.
+
 ### A1-B2 starter collection
 
 Click **Add A1-B2 starter collection** in the Library tab to merge the bundled text-only collection into your database. The app asks before adding it; it does not fill your database on startup. It adds 7,695 unique entries: 7,473 words, 126 practical phrases, 76 idioms, and 20 proverbs. Source-level counts are A1: 542, A2: 1,038, B1: 2,058, B2: 4,057. Existing entries are skipped by the same accent-preserving duplicate key used for quick add. Their text, notes, classifications, and study history are not changed. Importing again safely skips entries still present. Deleted entries can be restored by explicitly importing again.
