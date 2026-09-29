@@ -12,6 +12,8 @@ from uuid import uuid4
 from topics import ALL_TOPICS, TOPICS, topics_for_card
 
 DIFFICULTIES = ("unknown", "easy", "medium", "hard")
+ALL_STUDY_LEVELS = "All levels"
+STUDY_LEVELS = (ALL_STUDY_LEVELS, "A1", "A2", "B1", "B2", "Personal")
 MAX_WORD_LENGTH = 120
 ENTRY_COLUMNS = (
     "id", "original_text", "normalized_key", "context", "notes", "difficulty",
@@ -153,7 +155,7 @@ class VocabularyDB:
         args = list(difficulties)
         if starter_levels is not None:
             selected = tuple(starter_levels)
-            if not selected or any(level not in ("A1", "A2", "B1", "B2", "Personal") for level in selected):
+            if not selected or any(level not in STUDY_LEVELS[1:] for level in selected):
                 return []
             options = []
             source_levels = [level for level in selected if level != "Personal"]
@@ -374,13 +376,16 @@ class VocabularyDB:
                 self.conn.execute("DELETE FROM reclassification_pending WHERE entry_id=?", (result["id"],))
         return {"applied": applied, "needs_review": needs_review, "skipped_stale": skipped}
 
-    def study_pool(self, difficulties, topic=ALL_TOPICS):
+    def study_pool(self, difficulties, topic=ALL_TOPICS, level=ALL_STUDY_LEVELS):
         if topic not in (ALL_TOPICS, *TOPICS):
             raise ValueError("Unknown study topic.")
+        if level not in STUDY_LEVELS:
+            raise ValueError("Unknown study source level.")
         chosen = tuple(x for x in difficulties if x in DIFFICULTIES[1:])
         if not chosen:
             return [], 0
-        rows = self.list_entries(difficulties=chosen)
+        levels = None if level == ALL_STUDY_LEVELS else (level,)
+        rows = self.list_entries(difficulties=chosen, starter_levels=levels)
         if topic != ALL_TOPICS:
             rows = [row for row in rows if topic in topics_for_card(row)]
         ready = [row for row in rows if all((row[field] or "").strip()

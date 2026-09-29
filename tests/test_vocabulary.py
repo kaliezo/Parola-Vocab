@@ -48,6 +48,12 @@ class ProfileTests(unittest.TestCase):
             try:
                 ready, incomplete = default_db.study_pool(("easy", "medium", "hard"))
                 self.assertEqual((len(ready), incomplete), (7695, 0))
+                for level, expected in (("A1", 542), ("A2", 1038),
+                                        ("B1", 2058), ("B2", 4057)):
+                    selected, missing = default_db.study_pool(("easy", "medium", "hard"),
+                                                               level=level)
+                    self.assertEqual((len(selected), missing), (expected, 0))
+                    self.assertTrue(all(row["starter_level"] == level for row in selected))
                 self.assertEqual(default_db.get_setting("level", ""), "A2")
                 self.assertEqual(default_db.get_setting("effort", ""), "xhigh")
                 self.assertEqual([row["original_text"] for row in ready
@@ -198,6 +204,12 @@ class StorageTests(unittest.TestCase):
         self.assertEqual(incomplete, 1)
 
     def test_study_pool_filters_topic_and_difficulty(self):
+        self.db.import_starter([
+            {"text": "rosso", "key": "rosso", "cefr_level": "A1", "kind": "word",
+             "source": "editorial"},
+            {"text": "banana", "key": "banana", "cefr_level": "B2", "kind": "word",
+             "source": "editorial"},
+        ])
         for word, gloss, difficulty in (("rosso", "red", "easy"),
                                         ("banana", "banana", "medium"),
                                         ("arancione", "orange", "hard")):
@@ -214,9 +226,20 @@ class StorageTests(unittest.TestCase):
         self.assertEqual(len(self.db.study_pool(("easy", "medium", "hard"), ALL_TOPICS)[0]), 3)
         self.assertEqual([row["original_text"] for row in
                           self.db.study_pool(("easy",), "Colors and shapes")[0]], ["rosso"])
+        self.assertEqual([row["original_text"] for row in
+                          self.db.study_pool(("easy", "medium", "hard"),
+                                             topic="Colors and shapes", level="A1")[0]], ["rosso"])
+        self.assertEqual([row["original_text"] for row in
+                          self.db.study_pool(("easy", "medium", "hard"),
+                                             topic="Food and drink", level="B2")[0]], ["banana"])
+        self.assertEqual([row["original_text"] for row in
+                          self.db.study_pool(("easy", "medium", "hard"),
+                                             topic="Colors and shapes", level="Personal")[0]], ["arancione"])
+        self.assertEqual(self.db.study_pool(("easy", "medium", "hard"), level="A2"), ([], 0))
         with self.assertRaises(ValueError):
             self.db.study_pool(("easy",), topic="Not a topic")
-
+        with self.assertRaises(ValueError):
+            self.db.study_pool(("easy",), level="C1")
 
     def test_reviewed_entry_is_skipped_until_context_changes(self):
         reviewed_id, _ = self.db.add("piano")

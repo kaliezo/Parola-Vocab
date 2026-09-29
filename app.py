@@ -13,7 +13,7 @@ from tkinter import filedialog, messagebox, simpledialog, ttk
 from classifier import (ClassificationCancelled, SCHEMA_PATH,
                         build_prompt, load_json_strict, run_codex, validate_response)
 from profiles import ProfileStore
-from storage import DIFFICULTIES, VocabularyDB
+from storage import ALL_STUDY_LEVELS, DIFFICULTIES, STUDY_LEVELS, VocabularyDB
 from starter import LEVELS, load_starter_catalog, starter_counts
 from study import StudySession, recall_estimate, recall_label
 from topics import ALL_TOPICS, TOPICS, topics_for_card
@@ -458,7 +458,7 @@ class VocabularyApp(tk.Tk):
 
     def _build_study(self):
         ttk.Label(self.study_tab, text="Study your vocabulary", style="Title.TLabel").pack(anchor="w")
-        ttk.Label(self.study_tab, text="Choose the difficulty mix, then reveal and rate each card.",
+        ttk.Label(self.study_tab, text="Choose a topic, word level, and difficulty mix, then study.",
                   style="Subtitle.TLabel").pack(anchor="w", pady=(1, 13))
         options = ttk.Frame(self.study_tab, style="Panel.TFrame", padding=16)
         options.pack(fill="x", pady=(0, 12))
@@ -485,6 +485,13 @@ class VocabularyApp(tk.Tk):
                                   values=(ALL_TOPICS, *TOPICS), state="readonly", width=28)
         topic_menu.pack(side="left")
         topic_menu.bind("<<ComboboxSelected>>", lambda _event: self._refresh_study_count())
+        ttk.Label(topic_row, text="WORD LEVEL", style="Field.TLabel").pack(
+            side="left", padx=(22, 8))
+        self.study_level = tk.StringVar(value=ALL_STUDY_LEVELS)
+        level_menu = ttk.Combobox(topic_row, textvariable=self.study_level,
+                                  values=STUDY_LEVELS, state="readonly", width=13)
+        level_menu.pack(side="left")
+        level_menu.bind("<<ComboboxSelected>>", lambda _event: self._refresh_study_count())
         self.study_count = tk.StringVar()
         ttk.Label(options, textvariable=self.study_count, style="PanelMuted.TLabel",
                   wraplength=1000).pack(
@@ -1167,14 +1174,15 @@ class VocabularyApp(tk.Tk):
         if not hasattr(self, "study_count"):
             return
         chosen = self._chosen_study_difficulties()
-        ready, incomplete = self.db.study_pool(chosen, topic=self.study_topic.get())
+        ready, incomplete = self.db.study_pool(chosen, topic=self.study_topic.get(),
+                                               level=self.study_level.get())
         unknown = self.db.counts()["unknown"]
         reviewed = self.db.review_count()
         if not chosen:
             self.study_count.set("Select at least one difficulty to study.")
         elif not ready:
-            if self.study_topic.get() != ALL_TOPICS:
-                message = f"No study-ready cards match {self.study_topic.get()} at these difficulties."
+            if self.study_topic.get() != ALL_TOPICS or self.study_level.get() != ALL_STUDY_LEVELS:
+                message = "No study-ready cards match this topic, word level, and difficulty selection."
                 if incomplete:
                     message += f" {incomplete:,} matching entries need learning content."
                 self.study_count.set(message)
@@ -1194,7 +1202,7 @@ class VocabularyApp(tk.Tk):
                     "English gloss, or Italian example. Complete them in Library."
                 )
             else:
-                self.study_count.set("No cards match this topic and difficulty selection. Try another selection.")
+                self.study_count.set("No cards match this topic, word level, and difficulty selection.")
         else:
             noun = "entry" if len(ready) == 1 else "entries"
             verb = "matches" if len(ready) == 1 else "match"
@@ -1210,12 +1218,13 @@ class VocabularyApp(tk.Tk):
         if not chosen:
             self._message("Select at least one study difficulty.")
             return
-        ready, incomplete = self.db.study_pool(chosen, topic=self.study_topic.get())
+        ready, incomplete = self.db.study_pool(chosen, topic=self.study_topic.get(),
+                                               level=self.study_level.get())
         if not ready:
             unknown = self.db.counts()["unknown"]
             reviewed = self.db.review_count()
-            if self.study_topic.get() != ALL_TOPICS:
-                self._message("No study-ready cards match this topic and difficulty selection.")
+            if self.study_topic.get() != ALL_TOPICS or self.study_level.get() != ALL_STUDY_LEVELS:
+                self._message("No study-ready cards match this topic, word level, and difficulty selection.")
             elif unknown > reviewed:
                 self._message("No cards ready. Evaluate new words or complete entries in Library.")
             elif reviewed:
@@ -1223,7 +1232,7 @@ class VocabularyApp(tk.Tk):
             elif incomplete:
                 self._message("No cards ready. Complete learning content in Library.")
             else:
-                self._message("No cards match this topic and difficulty selection. Try another selection.")
+                self._message("No cards match this topic, word level, and difficulty selection.")
             return
         size = "all" if self.session_size.get() == "All" else self.session_size.get()
         recent = self.db.recent_first_round_outcomes([row["id"] for row in ready])
