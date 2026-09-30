@@ -121,7 +121,7 @@ class VocabularyService:
 
     def start_session(self, difficulties, topic, level, size, custom=""):
         count = parse_session_size(size, custom)
-        ready, incomplete = self.study_pool(difficulties, topic, level)
+        ready, incomplete = self.db.study_pool(difficulties, topic, level, compact=True)
         if not ready:
             raise ValueError("No study-ready cards match. Adjust filters or prepare words in Library.")
         recent = self.db.recent_first_round_outcomes([row["id"] for row in ready])

@@ -185,7 +185,7 @@ class VocabularyDB:
             "LEFT JOIN starter_catalog s ON s.entry_id=e.id WHERE " +
             " AND ".join(clauses) + " ORDER BY e.original_text COLLATE NOCASE, e.id",
             args,
-        ).fetchall()
+        )
         return [dict(row) for row in rows]
 
     def starter_counts(self):
@@ -385,14 +385,45 @@ class VocabularyDB:
                 self.conn.execute("DELETE FROM reclassification_pending WHERE entry_id=?", (result["id"],))
         return {"applied": applied, "needs_review": needs_review, "skipped_stale": skipped}
 
-    def study_pool(self, difficulties, topic=ALL_TOPICS, level=ALL_STUDY_LEVELS):
+    @staticmethod
+    def _study_source(difficulties, topic, level):
         if topic not in (ALL_TOPICS, *TOPICS):
             raise ValueError("Unknown study topic.")
         if level not in STUDY_LEVELS:
             raise ValueError("Unknown study source level.")
         chosen = tuple(x for x in difficulties if x in DIFFICULTIES[1:])
+        args = list(chosen)
+        level_clause = ""
+        if level == "Personal":
+            level_clause = " AND s.entry_id IS NULL"
+        elif level != ALL_STUDY_LEVELS:
+            level_clause = " AND s.cefr_level=?"
+            args.append(level)
+        source = ("FROM entries e LEFT JOIN starter_catalog s ON s.entry_id=e.id "
+                  "WHERE e.difficulty IN (" + ",".join("?" for _ in chosen) + ")" + level_clause)
+        return chosen, source, args
+
+    def study_pool(self, difficulties, topic=ALL_TOPICS, level=ALL_STUDY_LEVELS, *, compact=False):
+        chosen, source, args = self._study_source(difficulties, topic, level)
         if not chosen:
             return [], 0
+        if compact:
+            rows = self.conn.execute(
+                "SELECT e.id, e.original_text, e.difficulty, e.definition_it, e.gloss_en, "
+                "e.example_it, e.study_attempts, e.remembered_count, "
+                "s.cefr_level AS starter_level, s.kind AS starter_kind " + source +
+                " ORDER BY e.original_text COLLATE NOCASE, e.id", args)
+            ready = []
+            incomplete = 0
+            for card in rows:
+                if topic != ALL_TOPICS and topic not in topics_for_card(card):
+                    continue
+                if all((card[field] or "").strip()
+                       for field in ("definition_it", "gloss_en", "example_it")):
+                    ready.append(dict(card))
+                else:
+                    incomplete += 1
+            return ready, incomplete
         levels = None if level == ALL_STUDY_LEVELS else (level,)
         rows = self.list_entries(difficulties=chosen, starter_levels=levels)
         if topic != ALL_TOPICS:
@@ -403,22 +434,9 @@ class VocabularyDB:
 
     def study_pool_counts(self, difficulties, topic=ALL_TOPICS, level=ALL_STUDY_LEVELS):
         """Count matching cards without loading full cards or sorting the pool."""
-        if topic not in (ALL_TOPICS, *TOPICS):
-            raise ValueError("Unknown study topic.")
-        if level not in STUDY_LEVELS:
-            raise ValueError("Unknown study source level.")
-        chosen = tuple(x for x in difficulties if x in DIFFICULTIES[1:])
+        chosen, source, args = self._study_source(difficulties, topic, level)
         if not chosen:
             return 0, 0
-        level_clause = ""
-        args = list(chosen)
-        if level == "Personal":
-            level_clause = " AND s.entry_id IS NULL"
-        elif level != ALL_STUDY_LEVELS:
-            level_clause = " AND s.cefr_level=?"
-            args.append(level)
-        source = ("FROM entries e LEFT JOIN starter_catalog s ON s.entry_id=e.id "
-                  "WHERE e.difficulty IN (" + ",".join("?" for _ in chosen) + ")" + level_clause)
         if topic != ALL_TOPICS:
             rows = self.conn.execute(
                 "SELECT e.original_text, e.definition_it, e.gloss_en, e.example_it, "

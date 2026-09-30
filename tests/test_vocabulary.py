@@ -263,6 +263,13 @@ class StorageTests(unittest.TestCase):
                         ready, incomplete = self.db.study_pool(difficulties, topic, level)
                         self.assertEqual(self.db.study_pool_counts(difficulties, topic, level),
                                          (len(ready), incomplete))
+                        compact, compact_incomplete = self.db.study_pool(
+                            difficulties, topic, level, compact=True)
+                        self.assertEqual([card["id"] for card in compact],
+                                         [card["id"] for card in ready])
+                        self.assertEqual(compact_incomplete, incomplete)
+                        for card in compact:
+                            self.assertEqual(card["gloss_en"], "a color")
 
     def test_library_view_keeps_filters_and_ready_status_without_full_content(self):
         ready_id, _ = self.db.add("casa")

@@ -1215,13 +1215,13 @@ class VocabularyApp(tk.Tk):
         if not hasattr(self, "study_count"):
             return
         chosen = self._chosen_study_difficulties()
-        ready, incomplete = self.db.study_pool(chosen, topic=self.study_topic.get(),
-                                               level=self.study_level.get())
+        ready_count, incomplete = self.db.study_pool_counts(chosen, topic=self.study_topic.get(),
+                                                            level=self.study_level.get())
         unknown = self.db.counts()["unknown"]
         reviewed = self.db.review_count()
         if not chosen:
             self.study_count.set("Select at least one difficulty to study.")
-        elif not ready:
+        elif not ready_count:
             if self.study_topic.get() != ALL_TOPICS or self.study_level.get() != ALL_STUDY_LEVELS:
                 message = "No study-ready cards match this topic, word level, and difficulty selection."
                 if incomplete:
@@ -1245,9 +1245,9 @@ class VocabularyApp(tk.Tk):
             else:
                 self.study_count.set("No cards match this topic, word level, and difficulty selection.")
         else:
-            noun = "entry" if len(ready) == 1 else "entries"
-            verb = "matches" if len(ready) == 1 else "match"
-            message = f"{len(ready):,} study-ready {noun} {verb} your selection."
+            noun = "entry" if ready_count == 1 else "entries"
+            verb = "matches" if ready_count == 1 else "match"
+            message = f"{ready_count:,} study-ready {noun} {verb} your selection."
             if incomplete:
                 message += f" {incomplete:,} selected entries need a definition, gloss, or example."
             if unknown:
@@ -1260,7 +1260,7 @@ class VocabularyApp(tk.Tk):
             self._message("Select at least one study difficulty.")
             return
         ready, incomplete = self.db.study_pool(chosen, topic=self.study_topic.get(),
-                                               level=self.study_level.get())
+                                               level=self.study_level.get(), compact=True)
         if not ready:
             unknown = self.db.counts()["unknown"]
             reviewed = self.db.review_count()
