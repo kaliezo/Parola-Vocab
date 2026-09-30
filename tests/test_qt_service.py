@@ -225,16 +225,24 @@ class QtSmokeTests(unittest.TestCase):
         self.window.detail_fields["notes"].setPlainText("Draft kept during sorting")
         header = self.window.table.horizontalHeader()
         self.assertTrue(header.sectionsClickable())
-        header.sectionClicked.emit(0)
+        with patch.object(self.service, "library", side_effect=AssertionError("sort reloaded library")):
+            header.sectionClicked.emit(0)
         self.assertEqual([item["original_text"] for item in self.window.model.rows],
                          ["gamma", "beta", "alpha"])
         self.assertEqual(self.window.selected_id, ids["beta"])
         self.assertEqual(self.window.detail_fields["notes"].toPlainText(),
                          "Draft kept during sorting")
         self.assertEqual(self.window.model.rows[self.window.table.currentIndex().row()]["id"], ids["beta"])
-        header.sectionClicked.emit(0)
+        with patch.object(self.service, "library", side_effect=AssertionError("sort reloaded library")):
+            header.sectionClicked.emit(0)
         self.assertEqual([item["original_text"] for item in self.window.model.rows],
                          ["alpha", "beta", "gamma"])
+        with patch.object(self.service, "library", side_effect=AssertionError("sort reloaded library")):
+            header.sectionClicked.emit(2)
+            header.sectionClicked.emit(0)
+        self.assertEqual([item["original_text"] for item in self.window.model.rows],
+                         ["gamma", "beta", "alpha"])
+        header.sectionClicked.emit(0)
         self.window.search.setText("beta")
         self.window.refresh_library()
         self.assertEqual([item["id"] for item in self.window.model.rows], [ids["beta"]])

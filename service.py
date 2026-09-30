@@ -116,6 +116,9 @@ class VocabularyService:
     def study_pool(self, difficulties, topic, level):
         return self.db.study_pool(difficulties, topic, level)
 
+    def study_pool_counts(self, difficulties, topic, level):
+        return self.db.study_pool_counts(difficulties, topic, level)
+
     def start_session(self, difficulties, topic, level, size, custom=""):
         count = parse_session_size(size, custom)
         ready, incomplete = self.study_pool(difficulties, topic, level)

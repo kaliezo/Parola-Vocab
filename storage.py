@@ -401,6 +401,49 @@ class VocabularyDB:
                  for field in ("definition_it", "gloss_en", "example_it"))]
         return ready, len(rows) - len(ready)
 
+    def study_pool_counts(self, difficulties, topic=ALL_TOPICS, level=ALL_STUDY_LEVELS):
+        """Count matching cards without loading full cards or sorting the pool."""
+        if topic not in (ALL_TOPICS, *TOPICS):
+            raise ValueError("Unknown study topic.")
+        if level not in STUDY_LEVELS:
+            raise ValueError("Unknown study source level.")
+        chosen = tuple(x for x in difficulties if x in DIFFICULTIES[1:])
+        if not chosen:
+            return 0, 0
+        level_clause = ""
+        args = list(chosen)
+        if level == "Personal":
+            level_clause = " AND s.entry_id IS NULL"
+        elif level != ALL_STUDY_LEVELS:
+            level_clause = " AND s.cefr_level=?"
+            args.append(level)
+        source = ("FROM entries e LEFT JOIN starter_catalog s ON s.entry_id=e.id "
+                  "WHERE e.difficulty IN (" + ",".join("?" for _ in chosen) + ")" + level_clause)
+        if topic != ALL_TOPICS:
+            rows = self.conn.execute(
+                "SELECT e.original_text, e.definition_it, e.gloss_en, e.example_it, "
+                "s.kind AS starter_kind " + source, args)
+            ready = incomplete = 0
+            for card in rows:
+                if topic not in topics_for_card(card):
+                    continue
+                if all((card[field] or "").strip()
+                       for field in ("definition_it", "gloss_en", "example_it")):
+                    ready += 1
+                else:
+                    incomplete += 1
+            return ready, incomplete
+        row = self.conn.execute(
+            "SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN "
+            "TRIM(COALESCE(e.definition_it, '')) != '' AND "
+            "TRIM(COALESCE(e.gloss_en, '')) != '' AND "
+            "TRIM(COALESCE(e.example_it, '')) != '' "
+            "THEN 1 ELSE 0 END), 0) AS ready "
+            + source,
+            args,
+        ).fetchone()
+        return row["ready"], row["total"] - row["ready"]
+
     def recent_first_round_outcomes(self, entry_ids, limit=5):
         ids = list(dict.fromkeys(entry_ids))
         if not ids:

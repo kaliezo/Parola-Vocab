@@ -16,7 +16,7 @@ from classifier import (ClassificationCancelled, ClassifierError, _stop_process,
                         explain_failure, load_json_strict,
                         run_codex, validate_response)
 from profiles import ProfileStore
-from storage import VocabularyDB
+from storage import STUDY_LEVELS, VocabularyDB
 from starter import load_starter_catalog, starter_counts
 from study import (StudySession, choose_cards, parse_session_size, recall_estimate,
                    recall_label, selection_weight)
@@ -243,6 +243,26 @@ class StorageTests(unittest.TestCase):
             self.db.study_pool(("easy",), topic="Not a topic")
         with self.assertRaises(ValueError):
             self.db.study_pool(("easy",), level="C1")
+
+    def test_study_pool_counts_match_card_selection(self):
+        self.db.import_starter([
+            {"text": "rosso", "key": "rosso", "cefr_level": "A1", "kind": "word",
+             "source": "editorial"},
+        ])
+        for word, difficulty, ready in (("rosso", "easy", True),
+                                        ("blu", "medium", False),
+                                        ("verde", "hard", True)):
+            entry_id, _ = self.db.add(word)
+            self.db.update(entry_id, original_text=word, context="", notes="",
+                           difficulty=difficulty, definition_it="Una definizione." if ready else "",
+                           gloss_en="a color", example_it="Un esempio.", difficulty_reason="")
+        for difficulties in ((), ("easy",), ("easy", "medium", "hard")):
+            for level in STUDY_LEVELS:
+                for topic in (ALL_TOPICS, "Colors and shapes"):
+                    with self.subTest(difficulties=difficulties, level=level, topic=topic):
+                        ready, incomplete = self.db.study_pool(difficulties, topic, level)
+                        self.assertEqual(self.db.study_pool_counts(difficulties, topic, level),
+                                         (len(ready), incomplete))
 
     def test_library_view_keeps_filters_and_ready_status_without_full_content(self):
         ready_id, _ = self.db.add("casa")

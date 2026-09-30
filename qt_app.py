@@ -242,6 +242,7 @@ class MainWindow(QMainWindow):
         self.last_add_success = 0.0
         self.sort_column = None
         self.sort_first_click = True
+        self.library_base_rows = []
         self.setWindowTitle("Italian Vocabulary")
         self.resize(1200, 840)
         self.setMinimumSize(900, 630)
@@ -612,7 +613,18 @@ class MainWindow(QMainWindow):
         header = self.table.horizontalHeader()
         header.setSortIndicator(column, Qt.SortOrder.DescendingOrder if descending else Qt.SortOrder.AscendingOrder)
         header.setSortIndicatorShown(True)
-        self.refresh_library()
+        selected_id = self.selected_id
+        rows = sort_library_rows(self.library_base_rows, self.model.recent,
+                                 self.sort_column, self.sort_first_click)
+        self.selecting = True
+        try:
+            self.model.replace(rows, self.model.recent, self.model.pending)
+            target = next((index for index, item in enumerate(rows)
+                           if item["id"] == selected_id), None)
+            if target is not None:
+                self.table.selectRow(target)
+        finally:
+            self.selecting = False
         self.table.verticalScrollBar().setValue(0)
         first_labels = (
             "Word: Z to A", "Source level: B2 to A1, Personal last",
@@ -641,11 +653,13 @@ class MainWindow(QMainWindow):
             pending = self.service.db.pending_recheck_ids()
             counts = self.service.db.counts()
             reviewed = self.service.db.review_count()
-            rows = sort_library_rows(rows, recent, self.sort_column, self.sort_first_click)
+            base_rows = rows
+            rows = sort_library_rows(base_rows, recent, self.sort_column, self.sort_first_click)
         except (OSError, ValueError, sqlite3.Error) as exc:
             self.fail("Could not refresh library", exc)
             return
         self.selecting = True
+        self.library_base_rows = base_rows
         self.model.replace(rows, recent, pending)
         target = next((index for index, item in enumerate(rows) if item["id"] == select_id), None)
         if target is not None:
@@ -1010,16 +1024,16 @@ class MainWindow(QMainWindow):
             self.start_button.setEnabled(False)
             return
         try:
-            ready, incomplete = self.service.study_pool(chosen, self.study_topic.currentText(),
-                                                         self.study_level.currentText())
+            ready_count, incomplete = self.service.study_pool_counts(
+                chosen, self.study_topic.currentText(), self.study_level.currentText())
             unknown = self.service.db.counts()["unknown"]
             reviewed = self.service.db.review_count()
         except (ValueError, sqlite3.Error) as exc:
             self.study_count.setText(str(exc))
             self.start_button.setEnabled(False)
             return
-        if ready:
-            info = f"{len(ready):,} study-ready cards match."
+        if ready_count:
+            info = f"{ready_count:,} study-ready cards match."
         else:
             info = "No study-ready cards match."
         if incomplete:
@@ -1027,7 +1041,7 @@ class MainWindow(QMainWindow):
         if unknown:
             info += f" {unknown:,} Unknown entries are excluded; {reviewed:,} need review."
         self.study_count.setText(info)
-        self.start_button.setEnabled(bool(ready))
+        self.start_button.setEnabled(bool(ready_count))
 
     def start_study(self):
         try:
