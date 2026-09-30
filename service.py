@@ -100,9 +100,9 @@ class VocabularyService:
                 self.cancel_evaluation(clear_queue=False)
         return changed, pending
 
-    def library(self, search="", difficulties=None, levels=None, review_only=False):
+    def library(self, search="", difficulties=None, levels=None, review_only=False, *, compact=False):
         return self.db.list_entries(search, difficulties, levels, review_only,
-                                    library_view=True)
+                                    library_view=True, compact_rows=compact)
 
     def add(self, word):
         return self.db.add(word)
@@ -121,11 +121,15 @@ class VocabularyService:
 
     def start_session(self, difficulties, topic, level, size, custom=""):
         count = parse_session_size(size, custom)
-        ready, incomplete = self.db.study_pool(difficulties, topic, level, compact=True)
+        ready, incomplete = self.db.study_pool(difficulties, topic, level, compact=True,
+                                               selection_only=count != "all")
         if not ready:
             raise ValueError("No study-ready cards match. Adjust filters or prepare words in Library.")
         recent = self.db.recent_first_round_outcomes([row["id"] for row in ready])
-        self.session = StudySession(ready, count, recent_outcomes=recent)
+        session = StudySession(ready, count, recent_outcomes=recent)
+        if count != "all":
+            session.cards = self.db.study_cards(card["id"] for card in session.cards)
+        self.session = session
         return len(self.session.cards), incomplete
 
     def reveal(self):

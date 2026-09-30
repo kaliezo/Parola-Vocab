@@ -2,6 +2,7 @@
 
 import os
 import json
+import random
 import tempfile
 import threading
 import time
@@ -18,6 +19,7 @@ from qt_app import MainWindow, sort_library_rows
 from service import VocabularyService
 from topics import ALL_TOPICS
 from storage import ALL_STUDY_LEVELS
+from study import choose_cards
 
 
 def response_for(request):
@@ -94,6 +96,25 @@ class ServiceTests(unittest.TestCase):
         changed, pending = self.service.save_settings({**self.service.settings(), "level": "B2"})
         self.assertEqual((changed, pending), (True, 21))
         self.assertEqual(len(self.service.evaluation_snapshot(recheck_only=True)), 21)
+
+    def test_short_session_matches_full_pool_and_loads_selected_content(self):
+        for index in range(30):
+            entry_id, _ = self.service.add(f"casa {index:02d}")
+            self.service.db.update(
+                entry_id, original_text=f"casa {index:02d}", context="", notes="",
+                difficulty="easy", definition_it="Una casa.", gloss_en="house",
+                example_it=f"La casa numero {index}.", difficulty_reason="")
+            self.service.db.record_study(entry_id, bool(index % 2))
+        pool, _ = self.service.db.study_pool(('easy',), compact=True)
+        recent = self.service.db.recent_first_round_outcomes(card['id'] for card in pool)
+        for size, custom, count in (('10', '', 10), ('20', '', 20), ('Custom', '50', 30)):
+            with self.subTest(size=size):
+                expected = choose_cards(pool, count, rng=random.Random(31), recent_outcomes=recent)
+                random.seed(31)
+                total, incomplete = self.service.start_session(
+                    ('easy',), ALL_TOPICS, ALL_STUDY_LEVELS, size, custom)
+                self.assertEqual((total, incomplete), (count, 0))
+                self.assertEqual(self.service.session.cards, expected)
 
     def test_cancellation_blocks_profile_switch_until_worker_exits(self):
         self.service.add("prova")
@@ -264,6 +285,19 @@ class QtSmokeTests(unittest.TestCase):
             self.service.db.record_study(beta, True)
         self.window.refresh_library()
         self.assertEqual([item["id"] for item in self.window.model.rows], [alpha, beta])
+
+    def test_rating_updates_shared_table_rows_and_later_recall_sort(self):
+        alpha, _ = self.service.add('alpha')
+        beta, _ = self.service.add('beta')
+        self.window.refresh_library()
+        self.window.sort_library(0)
+        self.service.db.record_study(beta, True)
+        self.window.model.update_entry(beta, self.service.db)
+        base = next(item for item in self.window.library_base_rows if item['id'] == beta)
+        self.assertEqual(base['study_attempts'], 1)
+        self.assertEqual(base['remembered_count'], 1)
+        self.window.sort_library(4)
+        self.assertEqual([item['id'] for item in self.window.model.rows], [alpha, beta])
 
     def test_study_stages_and_single_rating(self):
         entry_id, _ = self.service.add("casa")

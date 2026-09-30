@@ -1,0 +1,482 @@
+{
+  "python": "3.14.7",
+  "runs": 5,
+  "scenarios": {
+    "library": [
+      {
+        "cards": 7695,
+        "window_open_ms": 197.50618800026132,
+        "library_memory": {
+          "rss_mib": 85.2109375,
+          "pss_mib": 44.951171875,
+          "private_mib": 36.75,
+          "peak_rss_mib": 84.078125
+        },
+        "library_refresh_ms": 42.38408199944388,
+        "study_count_ms": 7.526021000558103,
+        "word_sort_ms": 0.05889100066269748,
+        "final_memory": {
+          "rss_mib": 89.19140625,
+          "pss_mib": 48.931640625,
+          "private_mib": 40.73046875,
+          "peak_rss_mib": 88.140625
+        },
+        "db_counts": {
+          "unknown": 0,
+          "easy": 2928,
+          "medium": 3911,
+          "hard": 856
+        }
+      },
+      {
+        "cards": 7695,
+        "window_open_ms": 189.63604000055057,
+        "library_memory": {
+          "rss_mib": 85.1640625,
+          "pss_mib": 44.94921875,
+          "private_mib": 36.75390625,
+          "peak_rss_mib": 84.76953125
+        },
+        "library_refresh_ms": 41.89077699993504,
+        "study_count_ms": 7.787880999785557,
+        "word_sort_ms": 0.05938699996477226,
+        "final_memory": {
+          "rss_mib": 89.12890625,
+          "pss_mib": 48.9140625,
+          "private_mib": 40.71875,
+          "peak_rss_mib": 88.77734375
+        },
+        "db_counts": {
+          "unknown": 0,
+          "easy": 2928,
+          "medium": 3911,
+          "hard": 856
+        }
+      },
+      {
+        "cards": 7695,
+        "window_open_ms": 189.4359699999768,
+        "library_memory": {
+          "rss_mib": 85.31640625,
+          "pss_mib": 45.0283203125,
+          "private_mib": 36.828125,
+          "peak_rss_mib": 84.6796875
+        },
+        "library_refresh_ms": 41.403810999327106,
+        "study_count_ms": 7.2627980007382575,
+        "word_sort_ms": 0.05888400028197793,
+        "final_memory": {
+          "rss_mib": 89.0078125,
+          "pss_mib": 48.7197265625,
+          "private_mib": 40.51953125,
+          "peak_rss_mib": 88.62890625
+        },
+        "db_counts": {
+          "unknown": 0,
+          "easy": 2928,
+          "medium": 3911,
+          "hard": 856
+        }
+      },
+      {
+        "cards": 7695,
+        "window_open_ms": 177.5901070004693,
+        "library_memory": {
+          "rss_mib": 85.32421875,
+          "pss_mib": 44.9658203125,
+          "private_mib": 36.7578125,
+          "peak_rss_mib": 84.7890625
+        },
+        "library_refresh_ms": 39.95966200000112,
+        "study_count_ms": 7.363287999396562,
+        "word_sort_ms": 0.05791000057797646,
+        "final_memory": {
+          "rss_mib": 89.1875,
+          "pss_mib": 48.8291015625,
+          "private_mib": 40.62109375,
+          "peak_rss_mib": 88.6953125
+        },
+        "db_counts": {
+          "unknown": 0,
+          "easy": 2928,
+          "medium": 3911,
+          "hard": 856
+        }
+      },
+      {
+        "cards": 7695,
+        "window_open_ms": 179.17015599959996,
+        "library_memory": {
+          "rss_mib": 85.203125,
+          "pss_mib": 44.9541015625,
+          "private_mib": 36.75390625,
+          "peak_rss_mib": 84.828125
+        },
+        "library_refresh_ms": 40.46030700010306,
+        "study_count_ms": 7.397694999781379,
+        "word_sort_ms": 0.05857899941474898,
+        "final_memory": {
+          "rss_mib": 89.17578125,
+          "pss_mib": 48.9267578125,
+          "private_mib": 40.7265625,
+          "peak_rss_mib": 88.8359375
+        },
+        "db_counts": {
+          "unknown": 0,
+          "easy": 2928,
+          "medium": 3911,
+          "hard": 856
+        }
+      }
+    ],
+    "study": [
+      {
+        "cards": 7695,
+        "window_open_ms": 178.19588200018188,
+        "library_memory": {
+          "rss_mib": 85.359375,
+          "pss_mib": 44.98046875,
+          "private_mib": 36.7890625,
+          "peak_rss_mib": 84.91015625
+        },
+        "study_20_ms": 45.93068000031053,
+        "selected_ids": [
+          896,
+          3475,
+          4824,
+          3889,
+          6883,
+          6398,
+          548,
+          3256,
+          3322,
+          6108,
+          5839,
+          246,
+          7266,
+          2446,
+          4572,
+          5554,
+          4667,
+          1075,
+          357,
+          656
+        ],
+        "final_memory": {
+          "rss_mib": 88.3125,
+          "pss_mib": 47.93359375,
+          "private_mib": 39.7421875,
+          "peak_rss_mib": 87.96484375
+        },
+        "db_counts": {
+          "unknown": 0,
+          "easy": 2928,
+          "medium": 3911,
+          "hard": 856
+        }
+      },
+      {
+        "cards": 7695,
+        "window_open_ms": 179.34539999987464,
+        "library_memory": {
+          "rss_mib": 85.14453125,
+          "pss_mib": 44.955078125,
+          "private_mib": 36.765625,
+          "peak_rss_mib": 84.3203125
+        },
+        "study_20_ms": 45.87989999981801,
+        "selected_ids": [
+          896,
+          3475,
+          4824,
+          3889,
+          6883,
+          6398,
+          548,
+          3256,
+          3322,
+          6108,
+          5839,
+          246,
+          7266,
+          2446,
+          4572,
+          5554,
+          4667,
+          1075,
+          357,
+          656
+        ],
+        "final_memory": {
+          "rss_mib": 87.68359375,
+          "pss_mib": 47.494140625,
+          "private_mib": 39.3046875,
+          "peak_rss_mib": 87.28515625
+        },
+        "db_counts": {
+          "unknown": 0,
+          "easy": 2928,
+          "medium": 3911,
+          "hard": 856
+        }
+      },
+      {
+        "cards": 7695,
+        "window_open_ms": 180.04383700008475,
+        "library_memory": {
+          "rss_mib": 85.18359375,
+          "pss_mib": 44.9619140625,
+          "private_mib": 36.76953125,
+          "peak_rss_mib": 84.67578125
+        },
+        "study_20_ms": 46.83597399980499,
+        "selected_ids": [
+          896,
+          3475,
+          4824,
+          3889,
+          6883,
+          6398,
+          548,
+          3256,
+          3322,
+          6108,
+          5839,
+          246,
+          7266,
+          2446,
+          4572,
+          5554,
+          4667,
+          1075,
+          357,
+          656
+        ],
+        "final_memory": {
+          "rss_mib": 87.76953125,
+          "pss_mib": 47.5478515625,
+          "private_mib": 39.35546875,
+          "peak_rss_mib": 87.68359375
+        },
+        "db_counts": {
+          "unknown": 0,
+          "easy": 2928,
+          "medium": 3911,
+          "hard": 856
+        }
+      },
+      {
+        "cards": 7695,
+        "window_open_ms": 179.02721000064048,
+        "library_memory": {
+          "rss_mib": 85.26953125,
+          "pss_mib": 44.951171875,
+          "private_mib": 36.75390625,
+          "peak_rss_mib": 84.7421875
+        },
+        "study_20_ms": 46.63098600030935,
+        "selected_ids": [
+          896,
+          3475,
+          4824,
+          3889,
+          6883,
+          6398,
+          548,
+          3256,
+          3322,
+          6108,
+          5839,
+          246,
+          7266,
+          2446,
+          4572,
+          5554,
+          4667,
+          1075,
+          357,
+          656
+        ],
+        "final_memory": {
+          "rss_mib": 87.8359375,
+          "pss_mib": 47.517578125,
+          "private_mib": 39.3203125,
+          "peak_rss_mib": 87.7265625
+        },
+        "db_counts": {
+          "unknown": 0,
+          "easy": 2928,
+          "medium": 3911,
+          "hard": 856
+        }
+      },
+      {
+        "cards": 7695,
+        "window_open_ms": 178.98646900084714,
+        "library_memory": {
+          "rss_mib": 85.14453125,
+          "pss_mib": 44.9462890625,
+          "private_mib": 36.76171875,
+          "peak_rss_mib": 84.10546875
+        },
+        "study_20_ms": 46.24844599948119,
+        "selected_ids": [
+          896,
+          3475,
+          4824,
+          3889,
+          6883,
+          6398,
+          548,
+          3256,
+          3322,
+          6108,
+          5839,
+          246,
+          7266,
+          2446,
+          4572,
+          5554,
+          4667,
+          1075,
+          357,
+          656
+        ],
+        "final_memory": {
+          "rss_mib": 88.140625,
+          "pss_mib": 47.9423828125,
+          "private_mib": 39.7578125,
+          "peak_rss_mib": 87.15234375
+        },
+        "db_counts": {
+          "unknown": 0,
+          "easy": 2928,
+          "medium": 3911,
+          "hard": 856
+        }
+      }
+    ],
+    "history": [
+      {
+        "cards": 7695,
+        "window_open_ms": 188.18006400033482,
+        "library_memory": {
+          "rss_mib": 85.3984375,
+          "pss_mib": 45.0205078125,
+          "private_mib": 36.83203125,
+          "peak_rss_mib": 84.59375
+        },
+        "recent_history_ms": 14.20921799945063,
+        "library_refresh_ms": 49.63192000013805,
+        "final_memory": {
+          "rss_mib": 89.34765625,
+          "pss_mib": 48.9697265625,
+          "private_mib": 40.78125,
+          "peak_rss_mib": 88.703125
+        },
+        "db_counts": {
+          "unknown": 0,
+          "easy": 2928,
+          "medium": 3911,
+          "hard": 856
+        }
+      },
+      {
+        "cards": 7695,
+        "window_open_ms": 187.16947800021444,
+        "library_memory": {
+          "rss_mib": 85.375,
+          "pss_mib": 45.005859375,
+          "private_mib": 36.8125,
+          "peak_rss_mib": 84.921875
+        },
+        "recent_history_ms": 14.003420000335609,
+        "library_refresh_ms": 49.52613899968128,
+        "final_memory": {
+          "rss_mib": 89.0625,
+          "pss_mib": 48.693359375,
+          "private_mib": 40.5,
+          "peak_rss_mib": 89.1015625
+        },
+        "db_counts": {
+          "unknown": 0,
+          "easy": 2928,
+          "medium": 3911,
+          "hard": 856
+        }
+      },
+      {
+        "cards": 7695,
+        "window_open_ms": 188.9974940004322,
+        "library_memory": {
+          "rss_mib": 85.31640625,
+          "pss_mib": 44.962890625,
+          "private_mib": 36.765625,
+          "peak_rss_mib": 84.671875
+        },
+        "recent_history_ms": 13.950161999673583,
+        "library_refresh_ms": 49.34498700004042,
+        "final_memory": {
+          "rss_mib": 89.3125,
+          "pss_mib": 48.958984375,
+          "private_mib": 40.76171875,
+          "peak_rss_mib": 88.734375
+        },
+        "db_counts": {
+          "unknown": 0,
+          "easy": 2928,
+          "medium": 3911,
+          "hard": 856
+        }
+      },
+      {
+        "cards": 7695,
+        "window_open_ms": 188.7495470000431,
+        "library_memory": {
+          "rss_mib": 85.1484375,
+          "pss_mib": 44.974609375,
+          "private_mib": 36.77734375,
+          "peak_rss_mib": 84.390625
+        },
+        "recent_history_ms": 13.898951000555826,
+        "library_refresh_ms": 48.992562999956135,
+        "final_memory": {
+          "rss_mib": 89.0859375,
+          "pss_mib": 48.912109375,
+          "private_mib": 40.71484375,
+          "peak_rss_mib": 88.40625
+        },
+        "db_counts": {
+          "unknown": 0,
+          "easy": 2928,
+          "medium": 3911,
+          "hard": 856
+        }
+      },
+      {
+        "cards": 7695,
+        "window_open_ms": 188.2602469995618,
+        "library_memory": {
+          "rss_mib": 85.33203125,
+          "pss_mib": 44.9755859375,
+          "private_mib": 36.76953125,
+          "peak_rss_mib": 84.51171875
+        },
+        "recent_history_ms": 14.080627999646822,
+        "library_refresh_ms": 49.78802499954327,
+        "final_memory": {
+          "rss_mib": 89.015625,
+          "pss_mib": 48.6591796875,
+          "private_mib": 40.453125,
+          "peak_rss_mib": 88.515625
+        },
+        "db_counts": {
+          "unknown": 0,
+          "easy": 2928,
+          "medium": 3911,
+          "hard": 856
+        }
+      }
+    ]
+  }
+}

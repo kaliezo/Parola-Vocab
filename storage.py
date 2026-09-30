@@ -5,6 +5,7 @@ import os
 import sqlite3
 import tempfile
 import unicodedata
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
@@ -25,6 +26,28 @@ TEXT_LIMITS = {
     "context": 2000, "notes": 4000, "definition_it": 500, "gloss_en": 300,
     "example_it": 500, "difficulty_reason": 500, "review_note": 500,
 }
+
+
+@dataclass(slots=True)
+class LibraryRow:
+    """Mutable table values without a separate dictionary for every word."""
+
+    id: int
+    original_text: str
+    difficulty: str
+    review_note: str | None
+    study_attempts: int
+    remembered_count: int
+    again_count: int
+    starter_level: str | None
+    content_ready: int
+
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def update(self, values):
+        for key, value in values.items():
+            setattr(self, key, value)
 
 
 def now():
@@ -114,6 +137,8 @@ class VocabularyDB:
                 );
                 CREATE INDEX IF NOT EXISTS study_reviews_recent
                     ON study_reviews(entry_id, round_number, reviewed_at DESC);
+                CREATE INDEX IF NOT EXISTS study_reviews_first_recent
+                    ON study_reviews(entry_id, reviewed_at) WHERE round_number=1;
                 CREATE TABLE IF NOT EXISTS starter_catalog (
                     entry_id INTEGER PRIMARY KEY REFERENCES entries(id) ON DELETE CASCADE,
                     cefr_level TEXT NOT NULL CHECK (cefr_level IN ('A1', 'A2', 'B1', 'B2')),
@@ -121,6 +146,8 @@ class VocabularyDB:
                     source TEXT NOT NULL CHECK (source IN ('community-cefr', 'editorial'))
                 );
                 CREATE INDEX IF NOT EXISTS starter_catalog_level ON starter_catalog(cefr_level);
+                CREATE INDEX IF NOT EXISTS entries_word_order
+                    ON entries(original_text COLLATE NOCASE, id);
             """)
 
     def add(self, value):
@@ -148,7 +175,7 @@ class VocabularyDB:
         return dict(row) if row else None
 
     def list_entries(self, search="", difficulties=None, starter_levels=None,
-                     review_only=False, *, library_view=False):
+                     review_only=False, *, library_view=False, compact_rows=False):
         difficulties = tuple(DIFFICULTIES if difficulties is None else difficulties)
         if not difficulties:
             return []
@@ -186,6 +213,8 @@ class VocabularyDB:
             " AND ".join(clauses) + " ORDER BY e.original_text COLLATE NOCASE, e.id",
             args,
         )
+        if library_view and compact_rows:
+            return [LibraryRow(*row) for row in rows]
         return [dict(row) for row in rows]
 
     def starter_counts(self):
@@ -403,7 +432,8 @@ class VocabularyDB:
                   "WHERE e.difficulty IN (" + ",".join("?" for _ in chosen) + ")" + level_clause)
         return chosen, source, args
 
-    def study_pool(self, difficulties, topic=ALL_TOPICS, level=ALL_STUDY_LEVELS, *, compact=False):
+    def study_pool(self, difficulties, topic=ALL_TOPICS, level=ALL_STUDY_LEVELS, *,
+                   compact=False, selection_only=False):
         chosen, source, args = self._study_source(difficulties, topic, level)
         if not chosen:
             return [], 0
@@ -420,7 +450,11 @@ class VocabularyDB:
                     continue
                 if all((card[field] or "").strip()
                        for field in ("definition_it", "gloss_en", "example_it")):
-                    ready.append(dict(card))
+                    if selection_only:
+                        ready.append({key: card[key] for key in
+                                      ("id", "study_attempts", "remembered_count")})
+                    else:
+                        ready.append(dict(card))
                 else:
                     incomplete += 1
             return ready, incomplete
@@ -431,6 +465,21 @@ class VocabularyDB:
         ready = [row for row in rows if all((row[field] or "").strip()
                  for field in ("definition_it", "gloss_en", "example_it"))]
         return ready, len(rows) - len(ready)
+
+    def study_cards(self, entry_ids):
+        """Load learning content only for cards selected for a short session."""
+        cards = {}
+        ids = list(entry_ids)
+        for offset in range(0, len(ids), 500):
+            chunk = ids[offset:offset + 500]
+            rows = self.conn.execute(
+                "SELECT e.id, e.original_text, e.difficulty, e.definition_it, e.gloss_en, "
+                "e.example_it, e.study_attempts, e.remembered_count, "
+                "s.cefr_level AS starter_level, s.kind AS starter_kind "
+                "FROM entries e LEFT JOIN starter_catalog s ON s.entry_id=e.id "
+                "WHERE e.id IN (" + ",".join("?" for _ in chunk) + ")", chunk)
+            cards.update((row["id"], dict(row)) for row in rows)
+        return [cards[entry_id] for entry_id in ids]
 
     def study_pool_counts(self, difficulties, topic=ALL_TOPICS, level=ALL_STUDY_LEVELS):
         """Count matching cards without loading full cards or sorting the pool."""
@@ -470,8 +519,13 @@ class VocabularyDB:
         for offset in range(0, len(ids), 500):
             chunk = ids[offset:offset + 500]
             rows = self.conn.execute(
-                "SELECT entry_id, remembered FROM study_reviews WHERE round_number=1 AND entry_id IN (" +
-                ",".join("?" for _ in chunk) + ") ORDER BY reviewed_at DESC, rowid DESC", chunk
+                "SELECT r.entry_id, r.remembered FROM "
+                "(SELECT DISTINCT entry_id FROM study_reviews WHERE round_number=1 "
+                "AND entry_id IN (" + ",".join("?" for _ in chunk) + ")) e "
+                "JOIN study_reviews r ON r.rowid IN "
+                "(SELECT rowid FROM study_reviews WHERE entry_id=e.entry_id "
+                "AND round_number=1 ORDER BY reviewed_at DESC, rowid DESC LIMIT ?) "
+                "ORDER BY r.reviewed_at DESC, r.rowid DESC", [*chunk, max(1, limit)]
             )
             for row in rows:
                 recent = outcomes.setdefault(row["entry_id"], [])

@@ -60,3 +60,19 @@ python3 -m unittest discover -s tests -v
 ```
 
 Tests use temporary profile stores and SQLite databases. Do not run GUI or Codex tests against a real profile merely for validation. The UI smoke checks in `tests/test_qt_service.py` use Qt's offscreen platform and temporary profiles.
+
+For a repeatable Linux performance and RAM check, run
+`python3 benchmarks/profile_app.py --runs 5 --output /tmp/italian-vocabulary-performance.json`.
+It opens the Qt interface offscreen using temporary profiles with the bundled
+7,695-card deck, measures Library and 20-card Study operations, and separately
+tests 100,000 synthetic study answers. It never opens a real user profile or
+calls Codex. Measurements include resident RAM (RSS), proportional RAM (PSS),
+private RAM, and peak RSS. See [PERFORMANCE.md](PERFORMANCE.md) for the recorded
+before/after comparison and its limits.
+
+The table uses smaller in-memory records, short sessions retain learning content
+only for selected cards, and recall lookup fetches at most the requested number
+of recent answers per word. SQLite adds word-order and first-round history
+indexes automatically on opening a profile; this can add a one-time indexing
+cost and some database disk space. Saved entries, history, filtering, weighted
+selection, and all study controls retain their behavior.

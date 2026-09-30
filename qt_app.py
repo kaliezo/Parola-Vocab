@@ -148,12 +148,16 @@ class LibraryModel(QAbstractTableModel):
         return None
 
     def replace(self, rows, recent, pending):
-        if [item["id"] for item in rows] == [item["id"] for item in self.rows]:
+        if len(rows) == len(self.rows) and all(
+                old["id"] == new["id"] for old, new in zip(self.rows, rows)):
             old_rows, old_recent, old_pending = self.rows, self.recent, self.pending
             self.rows, self.recent, self.pending = rows, recent, pending
+            same_recent = old_recent is recent or old_recent == recent
+            same_pending = old_pending is pending or old_pending == pending
             for index, (old, new) in enumerate(zip(old_rows, rows)):
-                if old != new or (new["id"] in old_pending) != (new["id"] in pending) or \
-                        old_recent.get(new["id"]) != recent.get(new["id"]):
+                if old != new or (not same_pending and
+                        (new["id"] in old_pending) != (new["id"] in pending)) or \
+                        (not same_recent and old_recent.get(new["id"]) != recent.get(new["id"])):
                     self.dataChanged.emit(self.index(index, 0), self.index(index, 4))
             return
         self.beginResetModel()
@@ -619,8 +623,8 @@ class MainWindow(QMainWindow):
         self.selecting = True
         try:
             self.model.replace(rows, self.model.recent, self.model.pending)
-            target = next((index for index, item in enumerate(rows)
-                           if item["id"] == selected_id), None)
+            target = None if selected_id is None else next(
+                (index for index, item in enumerate(rows) if item["id"] == selected_id), None)
             if target is not None:
                 self.table.selectRow(target)
         finally:
@@ -647,7 +651,8 @@ class MainWindow(QMainWindow):
         difficulties = [key for key, check in self.library_difficulties.items() if check.isChecked()]
         levels = [key for key, check in self.library_levels.items() if check.isChecked()]
         try:
-            rows = self.service.library(self.search.text(), difficulties, levels, self.review_check.isChecked())
+            rows = self.service.library(self.search.text(), difficulties, levels,
+                                        self.review_check.isChecked(), compact=True)
             ids = [item["id"] for item in rows]
             recent = self.service.db.recent_first_round_outcomes(ids)
             pending = self.service.db.pending_recheck_ids()
@@ -661,7 +666,8 @@ class MainWindow(QMainWindow):
         self.selecting = True
         self.library_base_rows = base_rows
         self.model.replace(rows, recent, pending)
-        target = next((index for index, item in enumerate(rows) if item["id"] == select_id), None)
+        target = None if select_id is None else next(
+            (index for index, item in enumerate(rows) if item["id"] == select_id), None)
         if target is not None:
             self.table.selectRow(target)
             if not self.is_dirty() and (select_id != self.selected_id or

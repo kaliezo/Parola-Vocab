@@ -1,4 +1,5 @@
 import json
+import math
 import os
 import queue
 import random
@@ -270,6 +271,12 @@ class StorageTests(unittest.TestCase):
                         self.assertEqual(compact_incomplete, incomplete)
                         for card in compact:
                             self.assertEqual(card["gloss_en"], "a color")
+                        candidates, candidate_incomplete = self.db.study_pool(
+                            difficulties, topic, level, compact=True, selection_only=True)
+                        self.assertEqual(candidate_incomplete, incomplete)
+                        self.assertEqual(candidates, [
+                            {key: card[key] for key in ("id", "study_attempts", "remembered_count")}
+                            for card in ready])
 
     def test_library_view_keeps_filters_and_ready_status_without_full_content(self):
         ready_id, _ = self.db.add("casa")
@@ -290,6 +297,9 @@ class StorageTests(unittest.TestCase):
                           self.db.list_entries(search="bakery", library_view=True)], [other_id])
         self.assertEqual([row["id"] for row in
                           self.db.list_entries(difficulties=["easy"], library_view=True)], [ready_id])
+        table_rows = self.db.list_entries(library_view=True, compact_rows=True)
+        for small, original in zip(table_rows, compact):
+            self.assertEqual({key: small[key] for key in original}, original)
 
     def test_reviewed_entry_is_skipped_until_context_changes(self):
         reviewed_id, _ = self.db.add("piano")
@@ -538,6 +548,33 @@ class StorageTests(unittest.TestCase):
         self.assertEqual(self.db.recent_first_round_outcomes([entry_id]),
                          {entry_id: [0, 1, 0, 1, 0]})
 
+    def test_bounded_history_preserves_ties_subset_chunks_and_custom_limits(self):
+        timestamp = '2026-01-01T00:00:00+00:00'
+        with self.db.conn:
+            self.db.conn.executemany(
+                'INSERT INTO entries(id, original_text, normalized_key, created_at, modified_at) '
+                'VALUES (?, ?, ?, ?, ?)',
+                ((index, f'word {index}', f'word {index}', timestamp, timestamp)
+                 for index in range(1, 511)))
+            self.db.conn.executemany(
+                'INSERT INTO study_reviews VALUES (?, ?, ?, ?, ?, ?)',
+                ((f'{entry_id}-{review}', entry_id, f'session-{review}',
+                  2 if review == 9 else 1, review % 2, timestamp)
+                 for entry_id in range(1, 511) for review in range(10)))
+        ids = [*range(1, 511), 1, 9999]
+        for limit in (0, 1, 5, 12):
+            with self.subTest(limit=limit):
+                expected = {}
+                for entry_id in dict.fromkeys(ids):
+                    rows = self.db.conn.execute(
+                        'SELECT remembered FROM study_reviews WHERE entry_id=? AND round_number=1 '
+                        'ORDER BY reviewed_at DESC, rowid DESC', (entry_id,)).fetchall()
+                    if rows:
+                        expected[entry_id] = [row[0] for row in rows[:limit]]
+                self.assertEqual(self.db.recent_first_round_outcomes(ids, limit), expected)
+        self.assertEqual(self.db.recent_first_round_outcomes([2, 4]),
+                         {2: [0, 1, 0, 1, 0], 4: [0, 1, 0, 1, 0]})
+
     def test_review_backup_round_trip_and_rejects_invalid_history(self):
         entry_id, _ = self.db.add("casa")
         self.db.record_study(entry_id, False, session_id="first", round_number=1)
@@ -656,6 +693,27 @@ def study_entry(entry_id, remembered, again):
 
 
 class AdaptiveStudyTests(unittest.TestCase):
+    def test_heap_selection_keeps_full_ranking_order_and_random_state(self):
+        pool = [study_entry(index, index % 9, index % 7) for index in range(1, 201)]
+        recent = {index: [index % 2, 0, 1] for index in range(1, 201, 3)}
+        for size in (0, 1, 10, 20, 199, 200, 250, 'all'):
+            for seed in (1, 31, 12345):
+                with self.subTest(size=size, seed=seed):
+                    reference_rng = random.Random(seed)
+                    ranked = sorted(
+                        ((-math.log(max(reference_rng.random(), 1e-15)) /
+                          selection_weight(entry, recent.get(entry['id'], ())), entry)
+                         for entry in pool), key=lambda item: item[0])
+                    count = len(pool) if size == 'all' else min(size, len(pool))
+                    expected = [entry for _, entry in ranked[:count]]
+                    rng = random.Random(seed)
+                    self.assertEqual(choose_cards(iter(pool), size, rng=rng,
+                                                  recent_outcomes=recent), expected)
+                    self.assertEqual(rng.getstate(), reference_rng.getstate())
+        equal_pool = [study_entry(index, 0, 0) for index in range(1, 201)]
+        constant_rng = SimpleNamespace(random=lambda: 0.5)
+        self.assertEqual(choose_cards(equal_pool, 20, rng=constant_rng), equal_pool[:20])
+
     def test_custom_session_size_accepts_positive_counts_and_rejects_invalid_input(self):
         self.assertEqual(parse_session_size("Custom", " 37 "), 37)
         self.assertEqual(parse_session_size("10"), 10)

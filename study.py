@@ -1,5 +1,6 @@
 """Pure flashcard session state, independent of Tkinter and AI."""
 
+import heapq
 import math
 import random
 from uuid import uuid4
@@ -55,19 +56,29 @@ def selection_weight(entry, recent_first_round=()):
 
 def choose_cards(entries, size="all", *, rng=None, recent_outcomes=None):
     """Draw distinct cards with probabilities proportional to their weights."""
-    pool = list(entries)
+    pool = entries if isinstance(entries, (list, tuple)) else list(entries)
     count = len(pool) if size == "all" else min(int(size), len(pool))
     if count < 0:
         raise ValueError("Session size cannot be negative.")
     random_source = rng or random
     recent_outcomes = recent_outcomes or {}
-    ranked = []
-    for entry in pool:
-        weight = selection_weight(entry, recent_outcomes.get(entry["id"], ()))
-        draw = max(random_source.random(), 1e-15)
-        ranked.append((-math.log(draw) / weight, entry))
-    ranked.sort(key=lambda item: item[0])
-    return [entry for _, entry in ranked[:count]]
+
+    def ranks():
+        for entry in pool:
+            weight = selection_weight(entry, recent_outcomes.get(entry["id"], ()))
+            draw = max(random_source.random(), 1e-15)
+            yield (-math.log(draw) / weight, entry)
+
+    if count == 0:
+        # Keep the same RNG consumption as the full ranking, even for an empty draw.
+        for _ in ranks():
+            pass
+        return []
+    if count < len(pool):
+        ranked = heapq.nsmallest(count, ranks(), key=lambda item: item[0])
+    else:
+        ranked = sorted(ranks(), key=lambda item: item[0])
+    return [entry for _, entry in ranked]
 
 
 class StudySession:
