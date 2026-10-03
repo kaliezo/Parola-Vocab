@@ -2,16 +2,7 @@
 
 A native desktop workspace for collecting and studying Italian vocabulary. The interface uses PySide6 Qt Widgets; the existing Python SQLite, study, profile, and Codex CLI code remains the source of truth. Library and Study work offline after installation. AI evaluation is optional and uses your existing Codex CLI login, not an API key.
 
-On a clean install, create a profile with either the bundled 7,695-card study-ready deck or an empty library. Profiles have separate words, settings, and study history. The existing profile directory and database format are unchanged.
-
-## Sharing a ZIP
-
-Send the complete release ZIP and ask the recipient to extract it and read
-[START_HERE.md](START_HERE.md). Git and GitHub are not needed. The ZIP includes
-the app and bundled deck; Python 3.10 or newer and a one-time installation of
-the pinned UI packages are required. Library and Study then work offline.
-Personal profiles, study history, credentials, and the sender's virtual
-environment are excluded. Windows and Linux instructions are included.
+On a clean install, create a profile with either the bundled 7,695 card study ready deck or an empty library. Profiles have separate words, settings, and study history. The existing profile directory and database format are unchanged.
 
 ## Set up and launch
 
@@ -33,7 +24,6 @@ py -3 -m venv .venv
 run_windows.bat
 ```
 
-The launchers work from paths with spaces. They use `.venv` when present and show installation instructions if PySide6 is missing. If Fedora does not include `python3-venv` or a working pip in your Python installation, install the corresponding Fedora Python packages. Normal launch requires no build step, internet access, or second terminal. Qt opens a native desktop window with system file pickers. The Windows launcher is provided but has not been run on Windows in this workspace.
 
 The previous Tkinter entry point remains available with `python3 app.py` as a migration fallback. Normal launch uses `qt_app.py`. No profile data is copied or relocated by the UI migration.
 
