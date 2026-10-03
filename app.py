@@ -128,7 +128,7 @@ class VocabularyApp(tk.Tk):
         self.profile_store = profile_store
         self.profile = profile
         self.next_profile_id = None
-        self.title(f"Vocabulary - {profile['name']}")
+        self.title(f"Parola Vocab - {profile['name']}")
         self.geometry("1200x840")
         self.minsize(900, 630)
         self.db = VocabularyDB(profile_store.database_path(profile["id"]))
@@ -251,7 +251,7 @@ class VocabularyApp(tk.Tk):
                    command=self._switch_profile).pack(side="right", anchor="n")
         title_area = ttk.Frame(heading)
         title_area.pack(side="left", fill="x", expand=True)
-        ttk.Label(title_area, text="Vocabulary", style="Title.TLabel").pack(anchor="w")
+        ttk.Label(title_area, text="Parola Vocab", style="Title.TLabel").pack(anchor="w")
         ttk.Label(title_area, text="Capture a word now. Make it familiar later.",
                   style="Subtitle.TLabel").pack(anchor="w", pady=(1, 0))
 

@@ -28,7 +28,7 @@ def main():
     content = (
         "[Desktop Entry]\n"
         "Type=Application\n"
-        "Name=Vocabulary\n"
+        "Name=Parola Vocab\n"
         "Comment=Save and study Italian words\n"
         "Keywords=Italian;Vocabulary;Flashcards;Words;\n"
         "Exec=/usr/bin/bash " + desktop_quote(project / "run.sh") + "\n"

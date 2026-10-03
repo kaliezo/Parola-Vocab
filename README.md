@@ -1,4 +1,4 @@
-# Vocabulary
+# Parola Vocab
 
 A desktop app for collecting and studying Italian words and expressions.
 Start with the bundled deck of 7,695 cards or build your own library.

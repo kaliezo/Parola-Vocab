@@ -1,4 +1,4 @@
-# Vocabulary guide
+# Parola Vocab guide
 
 For a short introduction, see [README.md](README.md). For first-time setup,
 see [START_HERE.md](START_HERE.md).
@@ -40,7 +40,7 @@ The launchers work from paths with spaces. They use `.venv` when present and sho
 
 The previous Tkinter entry point remains available with `python3 app.py` as a migration fallback. Normal launch uses `qt_app.py`. No profile data is copied or relocated by the UI migration.
 
-To add the app to the KDE Plasma or GNOME application menu, run `python3 create_desktop_launcher.py --install`. If you move the project, rerun with `--install --replace`. The app appears as **Vocabulary** in the application menu and window heading. This generates `Vocabulary.desktop` in the project and a user-level desktop entry that calls `run.sh` and does not need administrator privileges.
+To add the app to the KDE Plasma or GNOME application menu, run `python3 create_desktop_launcher.py --install`. If you move the project or update an existing shortcut to the new app name, rerun with `--install --replace`. The app appears as **Parola Vocab** in the application menu and window heading. This generates `Vocabulary.desktop` in the project and a user-level desktop entry that calls `run.sh` and does not need administrator privileges.
 
 ## Daily use
 

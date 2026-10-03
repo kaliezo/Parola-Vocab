@@ -35,7 +35,7 @@ popd
 exit /b 0
 
 :failed_code
-echo Vocabulary stopped with error code %app_exit%.
+echo Parola Vocab stopped with error code %app_exit%.
 pause
 popd
 exit /b %app_exit%
@@ -44,6 +44,6 @@ pause
 popd
 exit /b 1
 :folder_error
-echo Could not open the Vocabulary folder.
+echo Could not open the Parola Vocab folder.
 pause
 exit /b 1

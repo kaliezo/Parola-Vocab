@@ -1,6 +1,12 @@
-# Italian Vocabulary repository guidance
+# Parola Vocab repository guidance
 
 Follow the parent workspace `AGENTS.md` as well as this file.
+
+## App identity
+
+- Use `Parola Vocab` for the app's user-facing name. Preserve existing internal
+  identifiers, profile storage paths, and launcher filenames so updates remain
+  compatible with saved profiles and installed shortcuts.
 
 ## Documentation
 

@@ -1,4 +1,4 @@
-# Start using Vocabulary
+# Start using Parola Vocab
 
 This folder contains the complete app and its bundled 7,695-card Italian deck.
 You do not need Git, GitHub, or the sender's account. Your words and study
@@ -7,7 +7,7 @@ history are saved in your own local profile.
 ## First: extract the ZIP
 
 Extract the entire ZIP to a folder you want to keep, such as Documents. Open
-the extracted Vocabulary folder. Do not launch the app from inside the ZIP.
+the extracted app folder. Do not launch the app from inside the ZIP.
 Keep all the files together; the app loads its deck from this folder.
 
 Python and the UI packages are required. Internet access is needed to install
@@ -17,7 +17,7 @@ them once. After setup, Library and Study work offline.
 
 1. Install Python 3.10 or newer from https://www.python.org/downloads/windows/.
    Include the Python launcher if the installer offers it.
-2. Open the extracted Vocabulary folder in File Explorer. Click the address
+2. Open the extracted app folder in File Explorer. Click the address
    bar, type `cmd`, and press Enter to open a terminal in that folder.
 3. Run these two commands, one at a time:
 
@@ -26,7 +26,7 @@ them once. After setup, Library and Study work offline.
    .venv\Scripts\python.exe -m pip install -r requirements.lock
    ```
 
-4. Double-click `run_windows.bat` to open Vocabulary. Use this same file for
+4. Double-click `run_windows.bat` to open Parola Vocab. Use this same file for
    later launches; installation is only needed once.
 
 If `py` is unavailable but `python --version` reports Python 3.10 or newer,
@@ -37,7 +37,7 @@ The Windows launcher is included, but this release was validated on Linux.
 ## Linux
 
 Install Python 3.10 or newer with pip and virtual environment support. Open
-a terminal in the extracted Vocabulary folder and run:
+a terminal in the extracted app folder and run:
 
 ```bash
 python3 -m venv .venv
