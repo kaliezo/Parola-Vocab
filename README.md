@@ -1,7 +1,7 @@
 # Vocabulary
 
 A desktop app for collecting and studying Italian words and expressions.
-Start with the bundled 7,695-card deck or build your own library.
+Start with the bundled deck of 7,695 cards or build your own library.
 
 - Study with flashcards, examples, English meanings, and Italian definitions.
 - Organize words by difficulty, topic, and language level.

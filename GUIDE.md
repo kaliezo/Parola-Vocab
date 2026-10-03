@@ -5,7 +5,7 @@ see [START_HERE.md](START_HERE.md).
 
 A native desktop workspace for collecting and studying Italian vocabulary. The interface uses PySide6 Qt Widgets; the existing Python SQLite, study, profile, and Codex CLI code remains the source of truth. Library and Study work offline after installation. AI evaluation is optional and uses your existing Codex CLI login, not an API key.
 
-On a clean install, create a profile with either the bundled 7,695-card study-ready deck or an empty library. Profiles have separate words, settings, and study history. The existing profile directory and database format are unchanged.
+On a clean install, create a profile with either the bundled 7,695 card study ready deck or an empty library. Profiles have separate words, settings, and study history. The existing profile directory and database format are unchanged.
 
 ## Sharing a ZIP
 
