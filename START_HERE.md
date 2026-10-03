@@ -66,6 +66,6 @@ R records Remembered and A records Again.
 AI evaluation is optional and requires a separate Codex CLI installation
 and your own login. It is not required for the bundled deck or offline study.
 
-See README.md for the full usage guide, profile storage, and backup options.
+See [GUIDE.md](GUIDE.md) for the full usage guide, profile storage, and backup options.
 The ZIP contains the app and bundled deck, not the sender's personal profiles,
 credentials, backups, or study history.

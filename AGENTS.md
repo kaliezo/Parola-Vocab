@@ -2,6 +2,20 @@
 
 Follow the parent workspace `AGENTS.md` as well as this file.
 
+## Documentation
+
+- Keep `README.md` short and introductory because it is the GitHub landing page.
+  Include the app's purpose, main features, basic requirements, and links to
+  setup and detailed documentation. Avoid implementation details, investigation
+  history, long command lists, and detailed validation results in the README.
+- Put first-time installation instructions in `START_HERE.md`, detailed usage,
+  data storage, backup, and developer validation information in `GUIDE.md`, and
+  performance measurements in `PERFORMANCE.md`.
+- When setup, usage, or behavior changes, update the relevant detailed guide.
+  Update `README.md` only when its introduction, requirements, or links need
+  to change. Read the relevant guide before changing the behavior it documents.
+- Check relative documentation links after moving or reorganizing content.
+
 ## GitHub history
 
 - The user has authorized pushing major changes to the public
