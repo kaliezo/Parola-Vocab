@@ -5,6 +5,6 @@ __pycache__/
 *.sqlite3-*
 profiles.json
 profiles/
-Italian Vocabulary.desktop
+Vocabulary.desktop
 PLAN.md
 .venv/

@@ -24,11 +24,11 @@ def main():
         parser.error("--replace requires --install")
 
     project = Path(__file__).resolve().parent
-    launcher = project / "Italian Vocabulary.desktop"
+    launcher = project / "Vocabulary.desktop"
     content = (
         "[Desktop Entry]\n"
         "Type=Application\n"
-        "Name=Italian Vocabulary\n"
+        "Name=Vocabulary\n"
         "Comment=Save and study Italian words\n"
         "Keywords=Italian;Vocabulary;Flashcards;Words;\n"
         "Exec=/usr/bin/bash " + desktop_quote(project / "run.sh") + "\n"

@@ -1,4 +1,4 @@
-"""Native Qt interface for Italian Vocabulary."""
+"""Native Qt interface for Vocabulary."""
 
 import sqlite3
 import sys
@@ -247,7 +247,7 @@ class MainWindow(QMainWindow):
         self.sort_column = None
         self.sort_first_click = True
         self.library_base_rows = []
-        self.setWindowTitle("Italian Vocabulary")
+        self.setWindowTitle("Vocabulary")
         self.resize(1200, 840)
         self.setMinimumSize(900, 630)
         root = QWidget()
@@ -256,7 +256,7 @@ class MainWindow(QMainWindow):
         outer.setContentsMargins(18, 14, 18, 10)
         outer.setSpacing(9)
         header = QHBoxLayout()
-        header.addWidget(label("Italian Vocabulary", "title"))
+        header.addWidget(label("Vocabulary", "title"))
         header.addStretch(1)
         self.profile_button = button("Profile", self.choose_profile)
         header.addWidget(self.profile_button)
@@ -297,7 +297,7 @@ class MainWindow(QMainWindow):
     def load_profile_ui(self):
         self.profile_button.setText("Profile: " + self.service.profile["name"])
         self.profile_button.setToolTip(self.service.profile["name"])
-        self.setWindowTitle("Italian Vocabulary - " + self.service.profile["name"])
+        self.setWindowTitle("Vocabulary - " + self.service.profile["name"])
         self.clear_detail()
         self.refresh_settings()
         self.refresh_library()

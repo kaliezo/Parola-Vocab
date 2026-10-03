@@ -1,8 +1,17 @@
-# Italian Vocabulary
+# Vocabulary
 
 A native desktop workspace for collecting and studying Italian vocabulary. The interface uses PySide6 Qt Widgets; the existing Python SQLite, study, profile, and Codex CLI code remains the source of truth. Library and Study work offline after installation. AI evaluation is optional and uses your existing Codex CLI login, not an API key.
 
 On a clean install, create a profile with either the bundled 7,695-card study-ready deck or an empty library. Profiles have separate words, settings, and study history. The existing profile directory and database format are unchanged.
+
+## Sharing a ZIP
+
+Send the complete release ZIP and ask the recipient to extract it and read
+[START_HERE.md](START_HERE.md). Git and GitHub are not needed. The ZIP includes
+the app and bundled deck; Python 3.10 or newer and a one-time installation of
+the pinned UI packages are required. Library and Study then work offline.
+Personal profiles, study history, credentials, and the sender's virtual
+environment are excluded. Windows and Linux instructions are included.
 
 ## Set up and launch
 
@@ -28,7 +37,7 @@ The launchers work from paths with spaces. They use `.venv` when present and sho
 
 The previous Tkinter entry point remains available with `python3 app.py` as a migration fallback. Normal launch uses `qt_app.py`. No profile data is copied or relocated by the UI migration.
 
-To add the app to the KDE Plasma or GNOME application menu, run `python3 create_desktop_launcher.py --install`. If you move the project, rerun with `--install --replace`. This generates a user-level desktop entry that calls `run.sh` and does not need administrator privileges.
+To add the app to the KDE Plasma or GNOME application menu, run `python3 create_desktop_launcher.py --install`. If you move the project, rerun with `--install --replace`. The app appears as **Vocabulary** in the application menu and window heading. This generates `Vocabulary.desktop` in the project and a user-level desktop entry that calls `run.sh` and does not need administrator privileges.
 
 ## Daily use
 
