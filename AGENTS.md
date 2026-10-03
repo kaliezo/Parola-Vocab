@@ -5,7 +5,7 @@ Follow the parent workspace `AGENTS.md` as well as this file.
 ## GitHub history
 
 - The user has authorized pushing major changes to the public
-  `kaliezo/italian-vocabulary` GitHub repository as part of normal project work.
+  `kaliezo/Vocabulary` GitHub repository as part of normal project work.
 - After implementing and validating a major feature, behavior change, or bundled
   data update, make a focused commit and push it to `origin/main` in the same
   task. Small edits may be grouped into a meaningful commit.
