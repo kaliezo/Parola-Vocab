@@ -10,12 +10,12 @@ Start with the bundled deck of 7,695 cards or build your own library.
 
 ## Get started
 
-Requires Python 3.10 or newer and a one-time installation of the UI packages.
-Linux is validated; a Windows launcher is included but has not been tested on
-Windows. AI evaluation is optional and requires the Codex CLI and your own login.
+Requires Python 3.10-3.14 and a one-time installation of the UI packages.
+Linux is validated; Windows and macOS instructions are included but untested.
+AI evaluation is optional and requires the Codex CLI and your own login.
 
 Download the ZIP using **Code > Download ZIP**, extract it, and follow
-[the setup instructions](START_HERE.md).
+[the setup instructions for Linux, Windows, or macOS](GUIDE.md#set-up-and-launch).
 
-See [the full guide](GUIDE.md) for usage, backups, and developer instructions,
-and [the performance notes](PERFORMANCE.md) for measurements.
+The same guide covers usage, backups, and developer instructions.
+See [the performance notes](PERFORMANCE.md) for measurements.

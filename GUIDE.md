@@ -1,34 +1,42 @@
 # Parola Vocab guide
 
-For a short introduction, see [README.md](README.md). For first-time setup,
-see [START_HERE.md](START_HERE.md).
-
-A native desktop workspace for collecting and studying Italian vocabulary. The interface uses PySide6 Qt Widgets; the existing Python SQLite, study, profile, and Codex CLI code remains the source of truth. Library and Study work offline after installation. AI evaluation is optional and uses your existing Codex CLI login, not an API key.
-
-On a clean install, create a profile with either the bundled 7,695 card study ready deck or an empty library. Profiles have separate words, settings, and study history. The existing profile directory and database format are unchanged.
-
-## Sharing a ZIP
-
-Send the complete release ZIP and ask the recipient to extract it and read
-[START_HERE.md](START_HERE.md). Git and GitHub are not needed. The ZIP includes
-the app and bundled deck; Python 3.10 or newer and a one-time installation of
-the pinned UI packages are required. Library and Study then work offline.
-Personal profiles, study history, credentials, and the sender's virtual
-environment are excluded. Windows and Linux instructions are included.
+See [README.md](README.md) for an introduction. This guide covers installation,
+launching, everyday use, and backups.
 
 ## Set up and launch
 
-Install Python 3.10 or newer. Create a project-local environment and install the pinned UI dependency once:
+Download **Code > Download ZIP** from the repository, or use a ZIP someone
+sent you. Extract the entire archive into a folder you want to keep. Open
+that folder and keep its files together; do not launch from inside the ZIP.
+Git and a GitHub account are not needed.
 
-Fedora Linux:
+Use Python **3.10-3.14**. Internet access is needed once to install the UI
+packages; Library and Study then work offline. Linux has been validated here;
+Windows and macOS setup instructions are provided but have not been tested here.
+
+### Linux
+
+Install Python, pip, and virtual environment support through your distribution.
+On Fedora, use `sudo dnf install python3 python3-pip`; on Ubuntu/Debian, use
+`sudo apt install python3 python3-venv python3-pip` if they are missing.
+Open a terminal in the extracted folder and run these commands one at a time:
 
 ```bash
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.lock
-./run.sh
+bash run.sh
 ```
 
-Windows 10 (1809 or later) and Windows 11:
+For later launches, run only `bash run.sh` from the app folder. For a KDE Plasma
+or GNOME menu shortcut, optionally run
+`python3 create_desktop_launcher.py --install`. To update an existing shortcut
+or its location, add `--replace`.
+
+### Windows 10 (1809 or later) or Windows 11
+
+Install a standard 64-bit [Python 3.10-3.14](https://www.python.org/downloads/windows/).
+Include the Python launcher if offered. In File Explorer, open the extracted
+folder, type `cmd` in its address bar, and press Enter. Run:
 
 ```bat
 py -3 -m venv .venv
@@ -36,11 +44,44 @@ py -3 -m venv .venv
 run_windows.bat
 ```
 
-The launchers work from paths with spaces. They use `.venv` when present and show installation instructions if PySide6 is missing. If Fedora does not include `python3-venv` or a working pip in your Python installation, install the corresponding Fedora Python packages. Normal launch requires no build step, internet access, or second terminal. Qt opens a native desktop window with system file pickers. The Windows launcher is provided but has not been run on Windows in this workspace.
+For later launches, double-click `run_windows.bat`. If `py` is unavailable,
+use `python -m venv .venv` instead, after checking `python --version`. If you
+have multiple Python versions, select a supported one, for example with
+`py -3.14 -m venv .venv`.
 
-The previous Tkinter entry point remains available with `python3 app.py` as a migration fallback. Normal launch uses `qt_app.py`. No profile data is copied or relocated by the UI migration.
+### macOS 13 or newer
 
-To add the app to the KDE Plasma or GNOME application menu, run `python3 create_desktop_launcher.py --install`. If you move the project or update an existing shortcut to the new app name, rerun with `--install --replace`. The app appears as **Parola Vocab** in the application menu and window heading. This generates `Vocabulary.desktop` in the project and a user-level desktop entry that calls `run.sh` and does not need administrator privileges.
+Install a standard [Python 3.10-3.14](https://www.python.org/downloads/macos/)
+for Intel or Apple Silicon. Complete the installer by running
+`Install Certificates.command` in its Python folder under Applications, as
+explained in the [Python installation guide](https://docs.python.org/3/using/mac.html).
+Open Terminal, type `cd `, drag the extracted app folder into the terminal,
+and press Enter. Then run:
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.lock
+.venv/bin/python qt_app.py
+```
+
+For later launches, open Terminal in the app folder and run only
+`.venv/bin/python qt_app.py`.
+
+### First launch and setup problems
+
+Create a profile with the bundled 7,695-card deck or an empty library, then
+open Study and start a session. AI evaluation is optional and requires a
+separate Codex CLI installation and your own login.
+
+If installation says no matching package was found, check `python3 --version`
+(or `py -3 --version` on Windows) and compare your OS with the
+[pinned UI package requirements](https://pypi.org/project/PySide6-Essentials/6.11.2/).
+Linux wheels require glibc 2.34+ on x86-64 or 2.39+ on ARM64. If your default
+Python is unsupported, create the environment with an installed supported
+version, such as `python3.14 -m venv .venv`.
+
+The app stores your profiles locally. A shared release ZIP contains the app
+and bundled deck, not the sender's personal profiles, credentials, or history.
 
 ## Daily use
 
@@ -63,6 +104,9 @@ The bundled text-only A1-B2 starter collection and the default study-ready deck 
 On Linux, profile databases live at `$XDG_DATA_HOME/italian_vocabulary/profiles/` when `XDG_DATA_HOME` is absolute, or `~/.local/share/italian_vocabulary/profiles/` otherwise. `profiles.json` stores names and the active profile. Legacy `vocabulary.sqlite3` is copied safely on first profile migration; the original remains. Backup JSON version 4 includes entries, settings, review history, source tags, tracked requests, and pending rechecks. Versions 1-4 can be imported through the existing validator and transactional merge. Runtime data is never stored in this repository.
 
 ## Developer validation
+
+Normal launch uses `qt_app.py`. The legacy Tkinter entry point remains
+available with `python3 app.py` as a migration fallback.
 
 Run from this directory:
 

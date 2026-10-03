@@ -14,8 +14,9 @@ Follow the parent workspace `AGENTS.md` as well as this file.
   Include the app's purpose, main features, basic requirements, and links to
   setup and detailed documentation. Avoid implementation details, investigation
   history, long command lists, and detailed validation results in the README.
-- Put first-time installation instructions in `START_HERE.md`, detailed usage,
-  data storage, backup, and developer validation information in `GUIDE.md`, and
+- Keep concise setup instructions for Linux, Windows, and macOS together in
+  `GUIDE.md`, followed by usage, data storage, backups, and developer validation.
+  Avoid a separate setup guide that duplicates this information. Keep
   performance measurements in `PERFORMANCE.md`.
 - When setup, usage, or behavior changes, update the relevant detailed guide.
   Update `README.md` only when its introduction, requirements, or links need
